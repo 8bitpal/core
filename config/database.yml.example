@@ -3,8 +3,8 @@ development:
   encoding: unicode
   database: bucky_box_development
   pool: 5
-  username: buckybox
-  password: dummy
+  username: rails
+  password: rails
 
 test:
   adapter: postgresql

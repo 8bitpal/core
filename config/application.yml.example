@@ -1,20 +1,20 @@
 # Rails setup
-SECRET_TOKEN: ""
+SECRET_TOKEN: "abc123"
 HOST: "localhost"
 PORT: "3000"
 HOST_WITH_PORT: "localhost:3000"
 
 # URLs
-MARKETING_SITE_URL: "http://www.buckybox.com/"
-CONSUMER_SITE_URL: "https://store.buckybox.com/"
+MARKETING_SITE_URL: "http://www.example.com/"
+CONSUMER_SITE_URL: "https://store.example.com/"
 
 # Emails
-SUPPORT_EMAIL: "support@buckybox.com"
-NO_REPLY_EMAIL: "noreply@buckybox.com"
-SIGNUPS_EMAIL: "signups@buckybox.com"
-SYSALERTS_EMAIL: "sysalerts@buckybox.com"
-MAIL_SAFE: "crashtestdummy@buckybox.com"
-X_MAILER: "Bucky Box Mailer (1.0.0) www.buckybox.com"
+SUPPORT_EMAIL: "support@example.com"
+NO_REPLY_EMAIL: "noreply@example.com"
+SIGNUPS_EMAIL: "signups@example.com"
+SYSALERTS_EMAIL: "sysalerts@example.com"
+MAIL_SAFE: "crashtestdummy@example.com"
+X_MAILER: "Bucky Box Mailer (1.0.0) www.example.com"
 
 # API
 API_MASTER_KEY: "key"

@@ -1,11 +1,11 @@
 class LocalisedAddress < ActiveRecord::Base
-  attr_accessible :street, :city, :zip, :state, :lat, :lng
+  attr_accessor :street, :city, :zip, :state, :lat, :lng
   belongs_to :addressable, polymorphic: true
   validates_presence_of :street, :city
 
   biggs :postal_address
 
-  after_save :geocode_async, if: "changed?"
+  after_save :geocode_async, if: -> { changed? }
 
   def recipient
     addressable.name

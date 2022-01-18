@@ -4,7 +4,7 @@ class Substitution < ActiveRecord::Base
 
   has_one :customer, through: :order
 
-  attr_accessible :order, :line_item, :order_id, :line_item_id
+  attr_accessor :order, :line_item, :order_id, :line_item_id
 
   validates_presence_of :order, :line_item
   validates_uniqueness_of :line_item_id, scope: :order_id

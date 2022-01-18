@@ -4,7 +4,7 @@ class LineItem < ActiveRecord::Base
   has_many :exclusions,    dependent: :destroy
   has_many :substitutions, dependent: :destroy
 
-  attr_accessible :distributor, :name
+  attr_accessor :distributor, :name
 
   validates_presence_of :distributor, :name
   validates_length_of :name, minimum: 1

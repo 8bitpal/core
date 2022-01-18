@@ -1,28 +1,28 @@
 source "https://rubygems.org"
 
 group :default do # XXX: all environments, think twice before adding Gems here
-  gem "rake"
-  gem "test-unit" # for Ruby 2.2+
-  gem "unicorn"
-  gem "rails", git: "https://github.com/infertux/rails.git", branch: "3-2-stable" # use our own 3.2 fork with backported patches...
-  gem "sprockets"
-  gem "rails-i18n", "~> 3.0.0" # for Rails 3.x
+  gem "rake", "13"
+  gem "test-unit", "3.5.3"
+  gem "unicorn", "6.1.0"
+  gem "rails", ">=6"
+  gem "sprockets", "3.5.2"
+  gem "rails-i18n", ">4"
   gem "pg"
-  gem "therubyracer"
+  gem "therubyracer", "0.12.3"
   gem "haml-rails"
-  gem "jquery-rails"
-  gem "jquery-ui-rails"
-  gem "bootstrap-sass", "< 3"
+  gem "jquery-rails", "4.4.0"
+  gem "jquery-ui-rails", "6.0.1"
+  gem "bootstrap-sass", "3.4.1"
   gem "bootbox-rails"
-  gem "select2-rails", "< 4" # TODO: upgrade? https://select2.github.io/announcements-4.0.html
+  gem "select2-rails"
   gem "hiredis"
-  gem "readthis", "< 1" # TODO: upgrade when 1.0.0 is stable
-  gem "devise"
+  gem "readthis", "2.2.0"
+  gem "devise", "4.8.1"
   gem "devise-i18n"
-  gem "simple_form", "< 3"
-  gem "inherited_resources"
-  gem "mini_magick"
-  gem "carrierwave"
+  gem "simple_form"
+  gem "inherited_resources", git: "https://github.com/activeadmin/inherited_resources.git"
+  gem "mini_magick", "4.11"
+  gem "carrierwave", "2.2.2"
   gem "acts-as-taggable-on"
   gem "pg_search"
   gem "whenever"
@@ -31,7 +31,7 @@ group :default do # XXX: all environments, think twice before adding Gems here
   gem "state_machine"
   gem "figaro"
   gem "virtus"
-  gem "draper", "< 2" # Rails 3.2 not supported with v2
+  gem "draper"
   gem "naught"
   gem "premailer-rails"
   gem "nokogiri" # premailer-rails dependency
@@ -49,7 +49,6 @@ group :default do # XXX: all environments, think twice before adding Gems here
   gem "charlock_holmes"
   gem "rabl"
   gem "apipie-rails"
-  gem "strong_parameters"
   gem "rails-timeago"
   gem "fast_blank"
   gem "retryable"
@@ -58,16 +57,16 @@ group :default do # XXX: all environments, think twice before adding Gems here
   gem "crazy_money"
   gem "currency_data"
   gem "email_templator"
-  gem "simple_form-bank_account_number"
+  #gem "simple_form-bank_account_number"
   gem "ordinalize_full", require: "ordinalize_full/integer"
-  gem "librato-rails"
+  #gem "librato-rails"
   gem "rbtrace"
   gem "geokit-rails"
   gem "typhoeus"
   gem "rack-cors"
   gem "marginalia"
-  gem "secure_headers", "< 4" # TODO: upgrade
-  gem "bugsnag"
+  gem "secure_headers"
+  #gem "bugsnag"
 
   gem "eu_central_bank", require: false
   gem "monetize", require: false
@@ -84,7 +83,6 @@ group :development do
   gem "sextant"
   gem "better_errors"
   gem "binding_of_caller"
-  gem "quiet_assets"
   gem "meta_request"
   gem "i15r", require: false
 end
@@ -103,17 +101,17 @@ group :test do
 end
 
 group :staging do
-  gem "mail_safe"
+  #gem "mail_safe"
 end
 
 group :development, :test do
   gem "fabrication"
   gem "rspec-rails"
   gem "listen"
-  gem "terminal-notifier-guard" # Mac 10.8 system notifications for Guard
+  #gem "terminal-notifier-guard" # Mac 10.8 system notifications for Guard
   gem "letter_opener"
   gem "bundler-audit", require: false
-  gem "bullet", "~> 5.3.0" # TODO: upgrade
+  gem "bullet"
   gem "rubocop"
   gem "byebug"
   gem "cane"
@@ -131,5 +129,5 @@ group :assets do
   gem "coffee-rails"
   gem "uglifier"
   gem "sass-rails"
-  gem "compass-rails"
+  gem "bourbon"
 end

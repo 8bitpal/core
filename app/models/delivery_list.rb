@@ -3,7 +3,7 @@ class DeliveryList < ActiveRecord::Base
 
   has_many :deliveries, dependent: :destroy
 
-  attr_accessible :distributor, :distributor_id, :date
+  attr_accessor :distributor, :distributor_id, :date
 
   validates_presence_of :distributor, :date
   validates_uniqueness_of :date, scope: :distributor_id

@@ -24,7 +24,7 @@ class Customer < ActiveRecord::Base
 
   monetize :balance_threshold_cents
 
-  attr_accessible :address_attributes, :first_name, :last_name, :email, :name, :distributor_id, :distributor,
+  attr_accessor :address_attributes, :first_name, :last_name, :email, :name, :distributor_id, :distributor,
     :delivery_service, :delivery_service_id, :password, :password_confirmation, :remember_me, :tag_list, :discount, :number, :notes,
     :special_order_preference, :balance_threshold, :via_webstore, :address
 
@@ -34,8 +34,8 @@ class Customer < ActiveRecord::Base
   validates_numericality_of :discount, greater_than_or_equal_to: 0.0, less_than_or_equal_to: 1.0
   validates_associated :account
 
-  before_validation :initialize_number, if: 'number.nil?'
-  before_validation :randomize_password, unless: 'encrypted_password.present?'
+  before_validation :initialize_number, if: -> { number.nil? }
+  before_validation :randomize_password, unless: -> { encrypted_password.present? }
   before_validation :discount_percentage
   before_validation :format_email
 

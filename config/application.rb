@@ -96,7 +96,7 @@ module BuckyBox
     config.active_record.schema_format = :sql
 
     # CORS setup (including handling of preflight OPTIONS requests)
-    config.middleware.insert_before 0, "Rack::Cors", debug: Rails.env.development? do
+    config.middleware.insert_before 0, Rack::Cors, debug: Rails.env.development? do
       allow do
         origins(%r{^https?:\/\/.*\.buckybox\.(com|local)(:[0-9]+)?$})
 

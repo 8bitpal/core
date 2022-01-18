@@ -1,5 +1,5 @@
 class BoxExtra < ActiveRecord::Base
-  attr_accessible
+  attr_accessor
 
   belongs_to :box
   belongs_to :extra

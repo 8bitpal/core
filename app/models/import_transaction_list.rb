@@ -17,7 +17,7 @@ class ImportTransactionList < ActiveRecord::Base
   scope :draft, -> { where(['import_transaction_lists.draft = ?', true]) }
   scope :processed, -> { where(['import_transaction_lists.draft = ?', false]) }
 
-  attr_accessible :csv_file, :import_transactions_attributes, :draft, :omni_importer_id
+  attr_accessor :csv_file, :import_transactions_attributes, :draft, :omni_importer_id
   delegate :payment_type, to: :omni_importer, allow_nil: true
 
   state_machine :status, initial: :pending do

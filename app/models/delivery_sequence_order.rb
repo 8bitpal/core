@@ -1,5 +1,5 @@
 class DeliverySequenceOrder < ActiveRecord::Base
-  attr_accessible :address_hash, :day, :position, :delivery_service_id
+  attr_accessor :address_hash, :day, :position, :delivery_service_id
 
   belongs_to :delivery_service
 

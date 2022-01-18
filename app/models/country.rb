@@ -1,5 +1,5 @@
 class Country < ActiveRecord::Base
-  attr_accessible :alpha2, :default_consumer_fee_cents
+  attr_accessor :alpha2, :default_consumer_fee_cents
 
   validates_presence_of :alpha2
   validate :validate_currency_and_time_zone

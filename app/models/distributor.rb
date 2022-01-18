@@ -26,7 +26,7 @@ class Distributor < ActiveRecord::Base
   has_many :line_items,               dependent: :destroy
   has_many :import_transaction_lists, dependent: :destroy
   has_many :import_transactions,      dependent: :destroy, through: :import_transaction_lists
-  has_many :distributors_omni_importers, class_name: DistributorsOmniImporters
+  has_many :distributors_omni_importers, class_name: "DistributorsOmniImporters"
   has_many :omni_importers, through: :distributors_omni_importers
 
   # Metrics
@@ -59,7 +59,7 @@ class Distributor < ActiveRecord::Base
   monetize :default_balance_threshold_cents
 
   # Actual model attributes
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :name, :url,
+  attr_accessor :email, :password, :password_confirmation, :remember_me, :name, :url,
     :company_logo, :company_logo_cache, :remove_company_logo, :company_team_image,
     :company_team_image_cache, :remove_company_team_image, :completed_wizard, :support_email,
     :separate_bucky_fee, :advance_hour, :advance_days, :time_zone, :currency,
@@ -69,11 +69,11 @@ class Distributor < ActiveRecord::Base
     :phone, :localised_address_attributes, :api_key, :api_secret, :overdue, :addons
 
   # Intro flags
-  attr_accessible :customers_show_intro, :deliveries_index_packing_intro,
+  attr_accessor :customers_show_intro, :deliveries_index_packing_intro,
     :deliveries_index_deliveries_intro, :payments_index_intro, :customers_index_intro
 
   # Settings
-  attr_accessible :locale, :customer_can_edit_orders, :customer_can_remove_orders,
+  attr_accessor :locale, :customer_can_edit_orders, :customer_can_remove_orders,
     :default_balance_threshold, :has_balance_threshold, :send_email, :send_halted_email,
     :collect_phone, :collect_delivery_note, :require_address_1, :require_address_2, :require_suburb,
     :require_postcode, :require_phone, :require_city, :require_delivery_note,
@@ -96,9 +96,9 @@ class Distributor < ActiveRecord::Base
   validate :validate_require_delivery_note
 
   before_validation :check_emails
-  before_create :parameterize_name, if: "parameter_name.nil?"
+  before_create :parameterize_name, if: -> { parameter_name.nil? }
   after_create :send_welcome_email
-  after_save :generate_required_daily_lists, if: "advance_days_changed? || advance_hour_changed? || time_zone_changed?"
+  after_save :generate_required_daily_lists, if: -> { advance_days_changed? || advance_hour_changed? || time_zone_changed? }
   after_save :update_halted_statuses
 
   serialize :email_templates, Array

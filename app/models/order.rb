@@ -31,7 +31,7 @@ class Order < ActiveRecord::Base
 
   acts_as_taggable
 
-  attr_accessible :box, :box_id, :account, :account_id, :quantity, :completed,
+  attr_accessor :box, :box_id, :account, :account_id, :quantity, :completed,
     :order_extras, :extras_one_off, :schedule_rule_attributes, :schedule_rule,
     :excluded_line_item_ids, :substituted_line_item_ids
 

@@ -5,7 +5,7 @@ class Transaction < ActiveRecord::Base
 
   monetize :amount_cents
 
-  attr_accessible :account, :transactionable, :amount, :description, :display_time, :reverse_transactionable
+  attr_accessor :account, :transactionable, :amount, :description, :display_time, :reverse_transactionable
 
   validates_presence_of :account_id, :transactionable_id, :transactionable_type, :amount, :description, :display_time
 

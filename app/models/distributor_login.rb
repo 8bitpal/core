@@ -1,6 +1,6 @@
 # Keeps track of distributor logins
 class DistributorLogin < ActiveRecord::Base
-  attr_accessible :distributor
+  attr_accessor :distributor
 
   belongs_to :distributor
 

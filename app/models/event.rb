@@ -1,6 +1,6 @@
 class Event < ActiveRecord::Base
   belongs_to :distributor
-  attr_accessible :distributor, :event_type, :dismissed, :trigger_on, :message, :key
+  attr_accessor :distributor, :event_type, :dismissed, :trigger_on, :message, :key
   validates_presence_of :distributor, :event_type, :message, :key
 
   before_save :set_trigger_on

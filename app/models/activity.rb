@@ -1,5 +1,5 @@
 class Activity < ActiveRecord::Base
-  attr_accessible :customer_id, :action
+  attr_accessor :customer_id, :action
 
   ACTIONS = {
     order_pause: lambda do |params|

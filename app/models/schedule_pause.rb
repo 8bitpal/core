@@ -1,5 +1,5 @@
 class SchedulePause < ActiveRecord::Base
-  attr_accessible :finish, :schedule_rule_id, :start
+  attr_accessor :finish, :schedule_rule_id, :start
 
   has_one :schedule_rule, dependent: :destroy
 

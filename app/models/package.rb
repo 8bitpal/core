@@ -19,17 +19,17 @@ class Package < ActiveRecord::Base
 
   acts_as_list scope: :packing_list_id
 
-  attr_accessible :order, :order_id, :packing_list, :status, :position
+  attr_accessor :order, :order_id, :packing_list, :status, :position
 
   STATUS = %w(unpacked packed).freeze # TODO: change to state_machine next time this is touched
   PACKING_METHOD = %w(manual auto).freeze
 
   validates_presence_of :order, :packing_list_id, :status
   validates_inclusion_of :status, in: STATUS, message: "%{value} is not a valid status"
-  validates_inclusion_of :packing_method, in: PACKING_METHOD, message: "%{value} is not a valid packing method", if: 'status == "packed"'
+  validates_inclusion_of :packing_method, in: PACKING_METHOD, message: "%{value} is not a valid packing method", if: -> { status == "packed" }
 
-  before_validation :default_status, if: 'status.nil?'
-  before_validation :default_packing_method, if: 'status == "packed" && packing_method.nil?'
+  before_validation :default_status, if: -> { status.nil? }
+  before_validation :default_packing_method, if: -> { status == "packed" && packing_method.nil? }
 
   before_save :archive_data
   after_save :save_one_off_extra_order

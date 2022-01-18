@@ -15,7 +15,7 @@ class Account < ActiveRecord::Base
 
   monetize :balance_cents
 
-  attr_accessible :customer, :tag_list, :default_payment_method
+  attr_accessor :customer, :tag_list, :default_payment_method
 
   before_validation :default_balance_and_currency
 
