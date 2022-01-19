@@ -1,4 +1,4 @@
-class AddCreditLimit < ActiveRecord::Migration
+class AddCreditLimit < ActiveRecord::Migration[7.0]
   def change
     add_column :distributors, :has_balance_threshold, :boolean, default: false
     add_column :distributors, :default_balance_threshold_cents, :integer, default: 0

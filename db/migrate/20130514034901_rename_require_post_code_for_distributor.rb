@@ -1,4 +1,4 @@
-class RenameRequirePostCodeForDistributor < ActiveRecord::Migration
+class RenameRequirePostCodeForDistributor < ActiveRecord::Migration[7.0]
   def up
    rename_column :distributors, :require_post_code, :require_postcode
   end

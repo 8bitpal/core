@@ -1,4 +1,4 @@
-class CreateDistributorInvoices < ActiveRecord::Migration
+class CreateDistributorInvoices < ActiveRecord::Migration[7.0]
   def change
     create_table :distributor_invoices do |t|
       t.belongs_to :distributor, index: true, null: false

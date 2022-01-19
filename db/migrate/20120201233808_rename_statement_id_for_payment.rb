@@ -1,4 +1,4 @@
-class RenameStatementIdForPayment < ActiveRecord::Migration
+class RenameStatementIdForPayment < ActiveRecord::Migration[7.0]
   def up
     rename_column :payments, :statement_id, :bank_statement_id
   end

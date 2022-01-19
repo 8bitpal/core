@@ -1,4 +1,4 @@
-class AddUniquenessConstraintToPackagesAndDeliveries < ActiveRecord::Migration
+class AddUniquenessConstraintToPackagesAndDeliveries < ActiveRecord::Migration[7.0]
   def change
     remove_index :packages, :order_id
 

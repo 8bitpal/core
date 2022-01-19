@@ -1,4 +1,4 @@
-class CreateBankInformation < ActiveRecord::Migration
+class CreateBankInformation < ActiveRecord::Migration[7.0]
   def change
     create_table :bank_information do |t|
       t.references :distributor

@@ -1,4 +1,4 @@
-class AddBankNameToOmniImporter < ActiveRecord::Migration
+class AddBankNameToOmniImporter < ActiveRecord::Migration[7.0]
   def up
     add_column :omni_importers, :bank_name, :string
 

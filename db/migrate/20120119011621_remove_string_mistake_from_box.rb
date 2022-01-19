@@ -1,4 +1,4 @@
-class RemoveStringMistakeFromBox < ActiveRecord::Migration
+class RemoveStringMistakeFromBox < ActiveRecord::Migration[7.0]
   def up
     remove_column :boxes, :string
   end

@@ -1,4 +1,4 @@
-class CreateOmniImporters < ActiveRecord::Migration
+class CreateOmniImporters < ActiveRecord::Migration[7.0]
   def change
     create_table :omni_importers do |t|
       t.integer :country_id

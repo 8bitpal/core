@@ -1,4 +1,4 @@
-class CustomerDevisable < ActiveRecord::Migration
+class CustomerDevisable < ActiveRecord::Migration[7.0]
   def up
     add_column :customers, "encrypted_password", :string, limit: 128, default: "", null: false
     add_column :customers, "reset_password_token", :string

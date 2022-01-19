@@ -1,4 +1,4 @@
-class ChangeFeeFromFloatToDecimal < ActiveRecord::Migration
+class ChangeFeeFromFloatToDecimal < ActiveRecord::Migration[7.0]
   def up
     change_column :distributors, :fee, :decimal, default: 0.0175, null: false
     rename_column :distributors, :fee, :bucky_box_percentage

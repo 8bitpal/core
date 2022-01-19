@@ -1,4 +1,4 @@
-class CreateDeductionsForPastDeliveries < ActiveRecord::Migration
+class CreateDeductionsForPastDeliveries < ActiveRecord::Migration[7.0]
   class Transaction < ActiveRecord::Base; end
   class Deduction < ActiveRecord::Base; end
   class Account < ActiveRecord::Base; end

@@ -1,4 +1,4 @@
-class RemoveCurrencyFromModels < ActiveRecord::Migration
+class RemoveCurrencyFromModels < ActiveRecord::Migration[7.0]
   def change
     remove_column :boxes,             :currency
     remove_column :deductions,        :currency

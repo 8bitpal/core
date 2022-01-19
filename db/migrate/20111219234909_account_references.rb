@@ -1,4 +1,4 @@
-class AccountReferences < ActiveRecord::Migration
+class AccountReferences < ActiveRecord::Migration[7.0]
   class Order < ActiveRecord::Base; end
   class Account < ActiveRecord::Base; end
   class Customer < ActiveRecord::Base; end

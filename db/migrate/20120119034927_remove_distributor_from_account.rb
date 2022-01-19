@@ -1,4 +1,4 @@
-class RemoveDistributorFromAccount < ActiveRecord::Migration
+class RemoveDistributorFromAccount < ActiveRecord::Migration[7.0]
   def up
     remove_index :accounts, :distributor_id
     remove_column :accounts, :distributor_id

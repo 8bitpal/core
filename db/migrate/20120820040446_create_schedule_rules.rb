@@ -1,4 +1,4 @@
-class CreateScheduleRules < ActiveRecord::Migration
+class CreateScheduleRules < ActiveRecord::Migration[7.0]
   def change
     create_table :schedule_rules do |t|
       t.string :recur

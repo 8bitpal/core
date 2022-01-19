@@ -1,4 +1,4 @@
-class AddWebstoreFieldsToDistributor < ActiveRecord::Migration
+class AddWebstoreFieldsToDistributor < ActiveRecord::Migration[7.0]
   def change
     add_column :distributors, :company_team_image, :string
     add_column :distributors, :about, :text

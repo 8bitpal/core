@@ -1,4 +1,4 @@
-class CreateSubstitutions < ActiveRecord::Migration
+class CreateSubstitutions < ActiveRecord::Migration[7.0]
   def change
     create_table :substitutions do |t|
       t.references :order

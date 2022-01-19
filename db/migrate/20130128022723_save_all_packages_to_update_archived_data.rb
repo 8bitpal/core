@@ -1,4 +1,4 @@
-class SaveAllPackagesToUpdateArchivedData < ActiveRecord::Migration
+class SaveAllPackagesToUpdateArchivedData < ActiveRecord::Migration[7.0]
   def up
     Package.unpacked.all.map(&:save)
   end

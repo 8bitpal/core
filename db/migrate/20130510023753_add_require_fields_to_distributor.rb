@@ -1,4 +1,4 @@
-class AddRequireFieldsToDistributor < ActiveRecord::Migration
+class AddRequireFieldsToDistributor < ActiveRecord::Migration[7.0]
   def change
     rename_column :distributors, :collect_phone_in_webstore, :collect_phone
 

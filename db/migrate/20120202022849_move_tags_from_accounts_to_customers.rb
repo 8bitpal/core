@@ -1,4 +1,4 @@
-class MoveTagsFromAccountsToCustomers < ActiveRecord::Migration
+class MoveTagsFromAccountsToCustomers < ActiveRecord::Migration[7.0]
   class Account < ActiveRecord::Base; end
   class Customer < ActiveRecord::Base; end
   class ActsAsTaggableOn::Tagging < ActiveRecord::Base; end

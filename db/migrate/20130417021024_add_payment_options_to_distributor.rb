@@ -1,4 +1,4 @@
-class AddPaymentOptionsToDistributor < ActiveRecord::Migration
+class AddPaymentOptionsToDistributor < ActiveRecord::Migration[7.0]
   def change
     add_column :distributors, :payment_cash_on_delivery, :boolean, default: true
     add_column :distributors, :payment_bank_deposit, :boolean, default: true

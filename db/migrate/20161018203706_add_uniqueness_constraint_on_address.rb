@@ -1,4 +1,4 @@
-class AddUniquenessConstraintOnAddress < ActiveRecord::Migration
+class AddUniquenessConstraintOnAddress < ActiveRecord::Migration[7.0]
   def change
     remove_index :addresses, :customer_id
 

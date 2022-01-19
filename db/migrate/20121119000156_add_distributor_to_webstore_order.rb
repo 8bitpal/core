@@ -1,4 +1,4 @@
-class AddDistributorToWebstoreOrder < ActiveRecord::Migration
+class AddDistributorToWebstoreOrder < ActiveRecord::Migration[7.0]
   class WebstoreOrder < ActiveRecord::Base; end
   class Account < ActiveRecord::Base; end
   class Customer < ActiveRecord::Base; end

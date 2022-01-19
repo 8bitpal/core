@@ -1,4 +1,4 @@
-class RefactorCountry < ActiveRecord::Migration
+class RefactorCountry < ActiveRecord::Migration[7.0]
   def up
     filepath = File.join(Bucky::Sql::PATH, 'templates', 'countries.sql')
     if File.exist?(filepath)

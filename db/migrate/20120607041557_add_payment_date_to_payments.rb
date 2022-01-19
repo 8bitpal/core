@@ -1,4 +1,4 @@
-class AddPaymentDateToPayments < ActiveRecord::Migration
+class AddPaymentDateToPayments < ActiveRecord::Migration[7.0]
   class Payment < ActiveRecord::Base; end
 
   def up

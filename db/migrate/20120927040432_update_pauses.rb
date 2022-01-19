@@ -1,4 +1,4 @@
-class UpdatePauses < ActiveRecord::Migration
+class UpdatePauses < ActiveRecord::Migration[7.0]
   # The SchedulePauses in the system don't respect the 366 days, so clean them out and replace them with ones that do
   def up
     ScheduleRule.delete_all

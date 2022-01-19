@@ -1,4 +1,4 @@
-class CreateOrderScheduleTransactions < ActiveRecord::Migration
+class CreateOrderScheduleTransactions < ActiveRecord::Migration[7.0]
   def change
     create_table :order_schedule_transactions do |t|
       t.references :order

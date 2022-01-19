@@ -1,4 +1,4 @@
-class CreateWebstoreOrders < ActiveRecord::Migration
+class CreateWebstoreOrders < ActiveRecord::Migration[7.0]
   def change
     create_table :webstore_orders do |t|
       t.references :account

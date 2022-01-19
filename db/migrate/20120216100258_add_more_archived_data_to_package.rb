@@ -1,4 +1,4 @@
-class AddMoreArchivedDataToPackage < ActiveRecord::Migration
+class AddMoreArchivedDataToPackage < ActiveRecord::Migration[7.0]
   def change
     rename_column :packages, :archived_currency, :archived_price_currency
     add_column :packages, :archived_fee_cents, :integer, default: 0

@@ -1,4 +1,4 @@
-class RemoveSourceFromImportTransactionList < ActiveRecord::Migration
+class RemoveSourceFromImportTransactionList < ActiveRecord::Migration[7.0]
   def up
     remove_column :import_transaction_lists, :source_type
   end

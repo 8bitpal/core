@@ -1,4 +1,4 @@
-class RemoveDateFromDelivery < ActiveRecord::Migration
+class RemoveDateFromDelivery < ActiveRecord::Migration[7.0]
   def up
     remove_column :deliveries, :date
   end

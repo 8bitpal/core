@@ -1,4 +1,4 @@
-class SplitNameForCustomer < ActiveRecord::Migration
+class SplitNameForCustomer < ActiveRecord::Migration[7.0]
   def up
     rename_column :customers, :name, :first_name
     add_column :customers, :last_name, :string

@@ -1,4 +1,4 @@
-class RemoveIceCube < ActiveRecord::Migration
+class RemoveIceCube < ActiveRecord::Migration[7.0]
   def change
     [:sunday, :monday, :tuesday, :wednesday, :thursday, :friday, :saturday].each do |day|
       remove_column :routes, day

@@ -1,4 +1,4 @@
-class CreateImportTransactions < ActiveRecord::Migration
+class CreateImportTransactions < ActiveRecord::Migration[7.0]
   def change
     create_table :import_transactions do |t|
       t.integer :customer_id

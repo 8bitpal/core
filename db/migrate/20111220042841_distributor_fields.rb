@@ -1,4 +1,4 @@
-class DistributorFields < ActiveRecord::Migration
+class DistributorFields < ActiveRecord::Migration[7.0]
   def up
     add_column :distributors, :invoice_threshold_cents, :integer, default: -500
     add_column :distributors, :currency, :string

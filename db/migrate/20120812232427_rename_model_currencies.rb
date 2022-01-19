@@ -1,4 +1,4 @@
-class RenameModelCurrencies < ActiveRecord::Migration
+class RenameModelCurrencies < ActiveRecord::Migration[7.0]
   def up
     rename_column :packages, :archived_price_currency, :currency
     remove_column :packages, :archived_fee_currency

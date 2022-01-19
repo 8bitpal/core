@@ -1,4 +1,4 @@
-class RenameRouteToDeliveryService2 < ActiveRecord::Migration
+class RenameRouteToDeliveryService2 < ActiveRecord::Migration[7.0]
   def up
     execute("UPDATE schedule_rules SET scheduleable_type = 'DeliveryService' WHERE scheduleable_type = 'Route'")
     execute("UPDATE webstore_cart_persistences SET collected_data = REPLACE(collected_data, 'Route', 'DeliveryService')")

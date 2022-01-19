@@ -1,4 +1,4 @@
-class AddAddressHashToAddress < ActiveRecord::Migration
+class AddAddressHashToAddress < ActiveRecord::Migration[7.0]
   def up
     add_column :addresses, :address_hash, :string
 

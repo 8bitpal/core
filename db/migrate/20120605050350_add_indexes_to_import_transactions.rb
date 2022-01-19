@@ -1,4 +1,4 @@
-class AddIndexesToImportTransactions < ActiveRecord::Migration
+class AddIndexesToImportTransactions < ActiveRecord::Migration[7.0]
   def change
     add_index(:import_transactions, :import_transaction_list_id)
     add_index(:import_transactions, [:import_transaction_list_id, :removed], name: "index_import_removed")

@@ -1,4 +1,4 @@
-class CreateRouteScheduleTransactions < ActiveRecord::Migration
+class CreateRouteScheduleTransactions < ActiveRecord::Migration[7.0]
   def change
     create_table :route_schedule_transactions do |t|
       t.references :route

@@ -1,4 +1,4 @@
-class UpdateDistributorCountry < ActiveRecord::Migration
+class UpdateDistributorCountry < ActiveRecord::Migration[7.0]
   def up
     Distributor.reset_column_information
     Distributor.transaction do

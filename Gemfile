@@ -83,7 +83,7 @@ group :development do
   gem "sextant"
   gem "better_errors"
   gem "binding_of_caller"
-  gem "meta_request"
+  #gem "meta_request"
   gem "i15r", require: false
 end
 

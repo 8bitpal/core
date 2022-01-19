@@ -1,4 +1,4 @@
-class DefaultActiveToFalseForOrders < ActiveRecord::Migration
+class DefaultActiveToFalseForOrders < ActiveRecord::Migration[7.0]
   def up
     change_column :orders, :active, :boolean, default: false, null: false
   end

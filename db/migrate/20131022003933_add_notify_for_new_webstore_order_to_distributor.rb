@@ -1,4 +1,4 @@
-class AddNotifyForNewWebstoreOrderToDistributor < ActiveRecord::Migration
+class AddNotifyForNewWebstoreOrderToDistributor < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
 
   def up

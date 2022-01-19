@@ -1,4 +1,4 @@
-class UpdateNullDeliveryMethods < ActiveRecord::Migration
+class UpdateNullDeliveryMethods < ActiveRecord::Migration[7.0]
   class Delivery < ActiveRecord::Base; end
 
   def up

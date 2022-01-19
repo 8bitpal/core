@@ -1,4 +1,4 @@
-class TurnOffIntoTourForSomeDistributors < ActiveRecord::Migration
+class TurnOffIntoTourForSomeDistributors < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
 
   def up

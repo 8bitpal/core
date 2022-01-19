@@ -1,4 +1,4 @@
-class AddFullNameToCountry < ActiveRecord::Migration
+class AddFullNameToCountry < ActiveRecord::Migration[7.0]
   def up
     add_column :countries, :full_name, :string
     Country.reset_column_information

@@ -1,4 +1,4 @@
-class AddDefaultsToSomeCentColumns < ActiveRecord::Migration
+class AddDefaultsToSomeCentColumns < ActiveRecord::Migration[7.0]
   def up
     change_column :deductions, :amount_cents, :integer, default: 0, null: false
     change_column :distributors, :invoice_threshold_cents, :integer, default: 0, null: false

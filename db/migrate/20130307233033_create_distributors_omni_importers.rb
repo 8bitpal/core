@@ -1,4 +1,4 @@
-class CreateDistributorsOmniImporters < ActiveRecord::Migration
+class CreateDistributorsOmniImporters < ActiveRecord::Migration[7.0]
   def change
     create_table :distributors_omni_importers do |t|
       t.integer :distributor_id

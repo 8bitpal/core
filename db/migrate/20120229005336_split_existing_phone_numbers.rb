@@ -1,4 +1,4 @@
-class SplitExistingPhoneNumbers < ActiveRecord::Migration
+class SplitExistingPhoneNumbers < ActiveRecord::Migration[7.0]
   class Address < ActiveRecord::Base; end
 
   def up

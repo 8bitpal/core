@@ -1,4 +1,4 @@
-class UpdateCurrencyForExistingDistributors < ActiveRecord::Migration
+class UpdateCurrencyForExistingDistributors < ActiveRecord::Migration[7.0]
   class Account < ActiveRecord::Base; end
   class Box < ActiveRecord::Base; end
   class Distributor < ActiveRecord::Base; end

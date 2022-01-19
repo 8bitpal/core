@@ -1,4 +1,4 @@
-class ChangeCustomerCanSendEmailDefault < ActiveRecord::Migration
+class ChangeCustomerCanSendEmailDefault < ActiveRecord::Migration[7.0]
   def up
     change_column :distributors, :customer_can_remove_orders, :boolean, default: :true
     change_column :distributors, :send_email, :boolean, default: :true

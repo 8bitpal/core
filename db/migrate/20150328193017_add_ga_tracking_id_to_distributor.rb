@@ -1,4 +1,4 @@
-class AddGaTrackingIdToDistributor < ActiveRecord::Migration
+class AddGaTrackingIdToDistributor < ActiveRecord::Migration[7.0]
   def change
     add_column :distributors, :ga_tracking_id, :string, null: true
   end

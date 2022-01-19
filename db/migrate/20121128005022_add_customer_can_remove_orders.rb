@@ -1,4 +1,4 @@
-class AddCustomerCanRemoveOrders < ActiveRecord::Migration
+class AddCustomerCanRemoveOrders < ActiveRecord::Migration[7.0]
   def up
     add_column :distributors, :customer_can_remove_orders, :boolean, default: false
 

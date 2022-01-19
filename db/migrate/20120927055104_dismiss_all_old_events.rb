@@ -1,4 +1,4 @@
-class DismissAllOldEvents < ActiveRecord::Migration
+class DismissAllOldEvents < ActiveRecord::Migration[7.0]
   def up
     Event.update_all(dismissed: true)
   end

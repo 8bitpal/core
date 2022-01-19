@@ -1,4 +1,4 @@
-class RemoveDefaultOnCustomersBalanceThresholdCents < ActiveRecord::Migration
+class RemoveDefaultOnCustomersBalanceThresholdCents < ActiveRecord::Migration[7.0]
   def up
     change_column :customers, :balance_threshold_cents, :integer, null: false, default: nil
     change_column_default(:customers, :balance_threshold_cents, nil)

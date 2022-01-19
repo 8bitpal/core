@@ -1,4 +1,4 @@
-class UpdateDistributorDefaults < ActiveRecord::Migration
+class UpdateDistributorDefaults < ActiveRecord::Migration[7.0]
   def change
     remove_column :distributors, :bank_deposit
     remove_column :distributors, :paypal

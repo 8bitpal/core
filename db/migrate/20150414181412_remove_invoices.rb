@@ -1,4 +1,4 @@
-class RemoveInvoices < ActiveRecord::Migration
+class RemoveInvoices < ActiveRecord::Migration[7.0]
   def change
     drop_table :invoices
     drop_table :invoice_information

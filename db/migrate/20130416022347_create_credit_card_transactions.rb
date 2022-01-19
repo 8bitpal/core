@@ -1,4 +1,4 @@
-class CreateCreditCardTransactions < ActiveRecord::Migration
+class CreateCreditCardTransactions < ActiveRecord::Migration[7.0]
   def change
     create_table :credit_card_transactions do |t|
       t.integer :amount

@@ -1,4 +1,4 @@
-class AddDisplayDateToTransactions < ActiveRecord::Migration
+class AddDisplayDateToTransactions < ActiveRecord::Migration[7.0]
   class Transaction < ActiveRecord::Base; end
 
   def up

@@ -1,4 +1,4 @@
-class LockMpcheapAccount < ActiveRecord::Migration
+class LockMpcheapAccount < ActiveRecord::Migration[7.0]
   def up
     Distributor.find(55).lock_access!(send_instructions: false) if Distributor.find_by(id: 55)
   end

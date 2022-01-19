@@ -1,4 +1,4 @@
-class UpdateScheduleHashes < ActiveRecord::Migration
+class UpdateScheduleHashes < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
   class Customer < ActiveRecord::Base; end
   class Account < ActiveRecord::Base; end

@@ -1,4 +1,4 @@
-class ParameterizeTags < ActiveRecord::Migration
+class ParameterizeTags < ActiveRecord::Migration[7.0]
   class ActsAsTaggableOn::Tag < ActiveRecord::Base; end
 
   def up

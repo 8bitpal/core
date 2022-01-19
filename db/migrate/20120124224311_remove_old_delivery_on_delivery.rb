@@ -1,4 +1,4 @@
-class RemoveOldDeliveryOnDelivery < ActiveRecord::Migration
+class RemoveOldDeliveryOnDelivery < ActiveRecord::Migration[7.0]
   def up
     remove_column :deliveries, :old_delivery_id
   end

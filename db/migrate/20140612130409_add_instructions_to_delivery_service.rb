@@ -1,4 +1,4 @@
-class AddInstructionsToDeliveryService < ActiveRecord::Migration
+class AddInstructionsToDeliveryService < ActiveRecord::Migration[7.0]
   class DeliveryService < ActiveRecord::Base; end
 
   def up

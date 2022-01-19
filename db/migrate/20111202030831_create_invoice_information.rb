@@ -1,4 +1,4 @@
-class CreateInvoiceInformation < ActiveRecord::Migration
+class CreateInvoiceInformation < ActiveRecord::Migration[7.0]
   def change
     create_table :invoice_information do |t|
       t.references :distributor

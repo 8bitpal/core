@@ -1,4 +1,4 @@
-class CopyDeliveryPositionToDso < ActiveRecord::Migration
+class CopyDeliveryPositionToDso < ActiveRecord::Migration[7.0]
   def up
     Delivery.find_each do |delivery|
       dso = DeliverySequenceOrder.for_delivery(delivery)

@@ -1,4 +1,4 @@
-class AddEmailTemplatesToDistributor < ActiveRecord::Migration
+class AddEmailTemplatesToDistributor < ActiveRecord::Migration[7.0]
   def up
     add_column :distributors, :email_templates, :text
 

@@ -1,4 +1,4 @@
-class AddPolymorphicAssocciationToPayments < ActiveRecord::Migration
+class AddPolymorphicAssocciationToPayments < ActiveRecord::Migration[7.0]
   class Paymant < ActiveRecord::Base; end
 
   def up

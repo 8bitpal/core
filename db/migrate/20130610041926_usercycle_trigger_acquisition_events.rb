@@ -1,4 +1,4 @@
-class UsercycleTriggerAcquisitionEvents < ActiveRecord::Migration
+class UsercycleTriggerAcquisitionEvents < ActiveRecord::Migration[7.0]
   def up
     Distributor.all.each do |distributor|
       properties = {

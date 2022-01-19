@@ -1,4 +1,4 @@
-class MovePhoneFromCustomerToAddress < ActiveRecord::Migration
+class MovePhoneFromCustomerToAddress < ActiveRecord::Migration[7.0]
   class Customer < ActiveRecord::Base; end
   class Address < ActiveRecord::Base; end
 

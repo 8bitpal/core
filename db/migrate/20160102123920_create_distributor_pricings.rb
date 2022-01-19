@@ -1,4 +1,4 @@
-class CreateDistributorPricings < ActiveRecord::Migration
+class CreateDistributorPricings < ActiveRecord::Migration[7.0]
   def change
     create_table :distributor_pricings do |t|
       t.belongs_to :distributor, index: true

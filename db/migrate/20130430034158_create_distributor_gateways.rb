@@ -1,4 +1,4 @@
-class CreateDistributorGateways < ActiveRecord::Migration
+class CreateDistributorGateways < ActiveRecord::Migration[7.0]
   def change
     create_table :distributor_gateways do |t|
       t.integer :distributor_id

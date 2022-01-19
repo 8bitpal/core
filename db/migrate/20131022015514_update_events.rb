@@ -1,4 +1,4 @@
-class UpdateEvents < ActiveRecord::Migration
+class UpdateEvents < ActiveRecord::Migration[7.0]
   class Event < ActiveRecord::Base; end
 
   def up

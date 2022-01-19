@@ -1,4 +1,4 @@
-class RenameArchiveMoneyColumnsForPackages < ActiveRecord::Migration
+class RenameArchiveMoneyColumnsForPackages < ActiveRecord::Migration[7.0]
   def up
     rename_column :packages, :archived_price_cents, :archived_box_price_cents
     rename_column :packages, :archived_fee_cents, :archived_route_fee_cents

@@ -1,4 +1,4 @@
-class LoadDistributorSettings < ActiveRecord::Migration
+class LoadDistributorSettings < ActiveRecord::Migration[7.0]
   class Country < ActiveRecord::Base; end
   class Distributor < ActiveRecord::Base; end
 

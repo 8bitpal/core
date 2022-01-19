@@ -1,4 +1,4 @@
-class RemoveAvailableDailyFromBoxes < ActiveRecord::Migration
+class RemoveAvailableDailyFromBoxes < ActiveRecord::Migration[7.0]
   def up
     remove_column :boxes, :available_daily
   end

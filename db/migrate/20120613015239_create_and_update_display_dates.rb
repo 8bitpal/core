@@ -1,4 +1,4 @@
-class CreateAndUpdateDisplayDates < ActiveRecord::Migration
+class CreateAndUpdateDisplayDates < ActiveRecord::Migration[7.0]
   def up
     change_column :transactions, :display_date, :datetime
     change_column :payments, :payment_date, :datetime

@@ -1,4 +1,4 @@
-class AddCronInfromationToDistributors < ActiveRecord::Migration
+class AddCronInfromationToDistributors < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
 
   def up

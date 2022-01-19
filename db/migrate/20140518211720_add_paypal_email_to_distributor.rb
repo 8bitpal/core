@@ -1,4 +1,4 @@
-class AddPaypalEmailToDistributor < ActiveRecord::Migration
+class AddPaypalEmailToDistributor < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
 
   def change

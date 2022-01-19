@@ -1,4 +1,4 @@
-class DowncaseEmail < ActiveRecord::Migration
+class DowncaseEmail < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
   class Customer < ActiveRecord::Base; end
 

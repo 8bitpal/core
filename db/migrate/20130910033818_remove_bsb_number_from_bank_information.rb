@@ -1,4 +1,4 @@
-class RemoveBsbNumberFromBankInformation < ActiveRecord::Migration
+class RemoveBsbNumberFromBankInformation < ActiveRecord::Migration[7.0]
   class BankInformation < ActiveRecord::Base; end
 
   def up

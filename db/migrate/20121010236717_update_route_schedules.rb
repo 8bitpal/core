@@ -1,4 +1,4 @@
-class UpdateRouteSchedules < ActiveRecord::Migration
+class UpdateRouteSchedules < ActiveRecord::Migration[7.0]
   class Route < ActiveRecord::Base; end
 
   def up

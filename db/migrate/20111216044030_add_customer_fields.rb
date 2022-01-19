@@ -1,4 +1,4 @@
-class AddCustomerFields < ActiveRecord::Migration
+class AddCustomerFields < ActiveRecord::Migration[7.0]
   def up
     add_column :customers, :distributor_id, :integer
     add_column :customers, :number, :string

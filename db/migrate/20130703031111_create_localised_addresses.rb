@@ -1,4 +1,4 @@
-class CreateLocalisedAddresses < ActiveRecord::Migration
+class CreateLocalisedAddresses < ActiveRecord::Migration[7.0]
   def change
     create_table :localised_addresses do |t|
       t.references :addressable, polymorphic: true, null: false

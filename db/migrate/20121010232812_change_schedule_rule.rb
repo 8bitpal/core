@@ -1,4 +1,4 @@
-class ChangeScheduleRule < ActiveRecord::Migration
+class ChangeScheduleRule < ActiveRecord::Migration[7.0]
   def up
     add_column :schedule_rules, :scheduleable_id, :integer
     add_column :schedule_rules, :scheduleable_type, :string

@@ -1,4 +1,4 @@
-class CreateDistributorMetrics < ActiveRecord::Migration
+class CreateDistributorMetrics < ActiveRecord::Migration[7.0]
   def change
     add_column :distributors, :last_seen_at, :timestamp
 

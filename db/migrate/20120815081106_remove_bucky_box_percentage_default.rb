@@ -1,4 +1,4 @@
-class RemoveBuckyBoxPercentageDefault < ActiveRecord::Migration
+class RemoveBuckyBoxPercentageDefault < ActiveRecord::Migration[7.0]
   def up
     change_column_default :distributors, :bucky_box_percentage, nil
   end

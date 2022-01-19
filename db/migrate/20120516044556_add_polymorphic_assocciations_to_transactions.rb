@@ -1,4 +1,4 @@
-class AddPolymorphicAssocciationsToTransactions < ActiveRecord::Migration
+class AddPolymorphicAssocciationsToTransactions < ActiveRecord::Migration[7.0]
   class Transaction < ActiveRecord::Base; end
 
   def up

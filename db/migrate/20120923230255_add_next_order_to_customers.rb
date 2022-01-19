@@ -1,4 +1,4 @@
-class AddNextOrderToCustomers < ActiveRecord::Migration
+class AddNextOrderToCustomers < ActiveRecord::Migration[7.0]
   def up
     add_column :customers, :next_order_id, :integer
     add_column :customers, :next_order_occurrence_date, :date

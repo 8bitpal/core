@@ -1,5 +1,5 @@
 module CacheHelper
-  raise "Rails 4?!" if Rails::VERSION::MAJOR > 3
+  #raise "Rails 4?!" if Rails::VERSION::MAJOR > 3
 
   def cache_if(condition, name = {}, options = nil, &block)
     if condition

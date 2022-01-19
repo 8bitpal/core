@@ -1,4 +1,4 @@
-class UpdateNewColumnsToHaveDefaults < ActiveRecord::Migration
+class UpdateNewColumnsToHaveDefaults < ActiveRecord::Migration[7.0]
   def up
     Box.update_all({ extras_limit: 0 }, { extras_limit: nil })
     Package.update_all({ archived_extras: [].to_yaml }, { archived_extras: nil })

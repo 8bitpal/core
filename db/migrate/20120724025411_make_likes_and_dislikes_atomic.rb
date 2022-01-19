@@ -1,4 +1,4 @@
-class MakeLikesAndDislikesAtomic < ActiveRecord::Migration
+class MakeLikesAndDislikesAtomic < ActiveRecord::Migration[7.0]
   class Distributor < ActiveRecord::Base; end
   class Box < ActiveRecord::Base; end
   class Order < ActiveRecord::Base; end
