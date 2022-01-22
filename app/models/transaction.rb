@@ -12,11 +12,7 @@ class Transaction < ActiveRecord::Base
   scope :ordered_by_display_time, -> { order('transactions.display_time DESC, transactions.created_at DESC') }
   scope :ordered_by_created_at, -> { order('transactions.created_at DESC') }
   scope :payments, -> { where("amount_cents > 0") }
-
-  default_value_for :display_time do
-    Date.current
-  end
-
+  
   def manual?
     transactionable_type == 'Account' || transactionable.manual? if transactionable
   end

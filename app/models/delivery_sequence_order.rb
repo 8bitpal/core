@@ -4,7 +4,6 @@ class DeliverySequenceOrder < ActiveRecord::Base
   belongs_to :delivery_service
 
   after_save :update_dso # cache results on delivery model
-  default_value_for :position, -1
 
   scope :ordered, -> { order('position ASC') }
 

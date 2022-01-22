@@ -19,9 +19,6 @@ class ScheduleRule < ActiveRecord::Base
   delegate :local_time_zone, to: :scheduleable, allow_nil: true
   delegate :recurs?, to: :frequency
 
-  DAYS.each { |day| default_value_for day, false }
-  default_value_for :start do Date.current; end
-
   def self.one_off(datetime)
     ScheduleRule.new(start: datetime)
   end

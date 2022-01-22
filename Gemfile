@@ -54,7 +54,7 @@ group :default do # XXX: all environments, think twice before adding Gems here
   gem "retryable"
   gem "rails-patch-json-encode"
   gem "oj"
-  gem "crazy_money"
+  gem "crazy_money", git: "https://github.com/8bitpal/crazy_money.git"
   gem "currency_data"
   gem "email_templator"
   #gem "simple_form-bank_account_number"

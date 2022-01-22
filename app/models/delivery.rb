@@ -32,8 +32,6 @@ class Delivery < ActiveRecord::Base
   scope :cancelled, -> { where(status: 'cancelled') }
   scope :ordered,   -> { order('dso ASC, created_at ASC') }
 
-  default_value_for :status_change_type, 'auto'
-
   delegate :date, to: :delivery_list, allow_nil: true
   delegate :address_hash, to: :address
   delegate :archived?, to: :delivery_list, allow_nil: true

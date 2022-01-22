@@ -1,6 +1,6 @@
 class Customer < ActiveRecord::Base
   include Bucky::Email
-  include PgSearch
+  include PgSearch::Model
 
   belongs_to :distributor
   belongs_to :delivery_service
@@ -108,14 +108,14 @@ class Customer < ActiveRecord::Base
   end
   # </HACK>
 
-  default_value_for :discount, 0
-  default_value_for :balance_threshold_cents do |customer|
-    if customer.distributor.present?
-      customer.distributor.default_balance_threshold_cents
-    else
-      0
-    end
-  end
+  #default_value_for :discount, 0
+  #default_value_for :balance_threshold_cents do |customer|
+  #  if customer.distributor.present?
+  #    customer.distributor.default_balance_threshold_cents
+  #  else
+  #    0
+  #  end
+  #end
 
   pg_search_scope :search,
     against: [:first_name, :last_name, :email],

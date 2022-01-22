@@ -103,12 +103,6 @@ class Distributor < ActiveRecord::Base
 
   serialize :email_templates, Array
 
-  default_value_for :time_zone,             DEFAULT_TIME_ZONE
-  default_value_for :currency,              DEFAULT_CURRENCY
-  default_value_for :advance_hour,          DEFAULT_ADVANCED_HOURS
-  default_value_for :advance_days,          DEFAULT_ADVANCED_DAYS
-  default_value_for :notify_address_change, true
-
   scope :keep_updated,    -> { where(keep_me_updated: true) }
   scope :active_webstore, -> { where(active_webstore: true) }
 

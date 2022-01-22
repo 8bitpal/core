@@ -42,10 +42,6 @@ class Package < ActiveRecord::Base
   serialize :archived_extras
   serialize :archived_address_details, Address
 
-  default_value_for :status, 'unpacked'
-  default_value_for :packing_method, 'auto'
-  default_value_for :archived_consumer_delivery_fee_cents, 0
-
   delegate :date, to: :packing_list, allow_nil: true
 
   def price

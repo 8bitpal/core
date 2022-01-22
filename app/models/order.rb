@@ -64,9 +64,6 @@ class Order < ActiveRecord::Base
   IS_ONE_OFF  = false
   QUANTITY    = 1
 
-  default_value_for :extras_one_off, IS_ONE_OFF
-  default_value_for :quantity, QUANTITY
-
   def set_default_schedule_rule
     self.schedule_rule ||= ScheduleRule.one_off(Date.current) if new_record?
   end

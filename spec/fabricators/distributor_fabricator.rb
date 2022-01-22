@@ -7,6 +7,9 @@ Fabricator(:distributor) do
   consumer_delivery_fee_cents 0
   send_email true
   send_halted_email true
+  time_zone 0
+  advance_days 0
+  advance_hour 0
 
   # Disable intros since we don't want them most of the time
   customers_index_intro false

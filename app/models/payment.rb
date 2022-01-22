@@ -35,13 +35,6 @@ class Payment < ActiveRecord::Base
 
   scope :reversed, -> { where(reversed: true) }
 
-  default_value_for :reversed, false
-  default_value_for :kind,     'unspecified'
-  default_value_for :source,   'manual'
-  default_value_for :display_time do
-    Time.current
-  end
-
   def reverse_payment!
     raise "This payment has already been reversed." if self.reversal_transaction.present?
 

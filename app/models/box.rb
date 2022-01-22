@@ -31,10 +31,6 @@ class Box < ActiveRecord::Base
 
   monetize :price_cents
 
-  default_value_for :extras_limit, EXTRAS_DISABLED
-  default_value_for :substitutions_limit, 0
-  default_value_for :exclusions_limit, 0
-
   default_scope { order(:name) }
   scope :not_hidden, -> { where(hidden: false) }
 

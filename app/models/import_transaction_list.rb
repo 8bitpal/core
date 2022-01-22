@@ -11,8 +11,6 @@ class ImportTransactionList < ActiveRecord::Base
 
   before_create :import_rows
 
-  default_value_for :draft, true
-
   scope :ordered, -> { order("created_at DESC") }
   scope :draft, -> { where(['import_transaction_lists.draft = ?', true]) }
   scope :processed, -> { where(['import_transaction_lists.draft = ?', false]) }
