@@ -5,20 +5,28 @@ $action-colour: #FAE1A0
 $action-colour-hover: darken($action-colour, 15%)
 $green-colour: #D4E4C4
 $grey-colour: #EFEFEF
+$greyLighter: lighten($grey-colour, 15%)
+$grayLighter: lighten($grey-colour, 15%)
 $red-colour: #F9D9D9
 $yellow-colour: #FAE1A0
 $archived-colour: #F0F0F0
 $forcasting-colour: #D4E2C5
 $error-colour: #F69585
+$tableBackground: $greyLighter
+$tableBorder: $grey-colour
+$black: #FFF
+$white: #000
+$dropdownBorder: $black
+$dropdownBackground: $grey-colour
 
 $content-background: #FFFFFF
 $content-border: #D3D3D3
 
 $negative-colour: #D0381B
 
-$badge-name: $grayLighter
+$badge-name: $greyLighter
 $badge-id: darken($badge-name, 15%)
-$badge-text: $black
+$badge-text: black
 
 //----- Site wide styles
 
@@ -85,8 +93,8 @@ fieldset > legend, .modal-header > span:not(.raw), .heading
   text-transform: uppercase
   width: inherit
   line-height: 14px
-  +border-radius(3px)
-  +single-text-shadow(0px, 0px, 0px)
+  border-radius: 3px
+  single-text-shadow: 0px, 0px, 0px
   &.red
     color: #FFF
     background-color: #C00
@@ -102,7 +110,7 @@ fieldset > legend, .modal-header > span:not(.raw), .heading
 
 .modal-header
   background-color: #F5F5F5
-  +border-radius(6px 6px 0 0)
+  border-radius 6px 6px 0 0 
 
 .modal-footer
   background-color: #FFF
@@ -148,7 +156,7 @@ table.no-horizontal-dividers
   padding: 2px 0px
   text-align: center
   background-color: $action-colour
-  +border-radius(0.4em)
+  border-radius 0.4em
   &:hover
     background-color: $action-colour-hover
 
@@ -156,7 +164,7 @@ table.no-horizontal-dividers
   margin: 0
   padding: 4px
   background-color: $action-colour
-  +border-radius(4px)
+  border-radius 4px
 
 .required-action
   color: #930 !important
@@ -180,7 +188,7 @@ table.no-horizontal-dividers
   font-size: 12px
 
 .label, .badge
-  +single-text-shadow(0px, 0px, 0px)
+  single-text-shadow 0px, 0px, 0px
 
 .label
   font-weight: normal
@@ -220,14 +228,14 @@ table.no-horizontal-dividers
   display: inline-block
   color: #333
   background-color: #F0EBDE
-  +border-radius(0.2em)
+  border-radius 0.2em
   .customer-id
     font-weight: bold
     display: inline-block
     color: #FFF
     background-color: #585652
     padding: 0 0.2em
-    +border-radius(0.2em)
+    border-radius 0.2em
     &:hover
       text-decoration: none
   .customer-name
@@ -268,7 +276,7 @@ table.no-horizontal-dividers
   background-color: white
 
 .input-prepend.input-block-level > input 
-  +box-sizing(border-box)
+  box-sizing border-box
   height: 30px
   display: table-cell
   width: 100%

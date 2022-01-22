@@ -11,7 +11,7 @@ $btnProcessBackgroundHighlight: darken($btnProcessBackground, 10%) !default
 $tableBackground: $white
 
 =divider($type: 'line')
-  border-color: $grayLight
+  border-color: $gray-light
   border-style: dashed
   border-image: image-url('customer-dashed-border.png') 8% repeat
   border-width: 0px
@@ -29,7 +29,7 @@ $tableBackground: $white
   border: 1px solid $section-border-color
   overflow: hidden
   position: relative
-  +single-box-shadow(rgba(0, 0, 0, .25), 0px, 15px, 20px, -6px)
+  single-box-shadow: rgba(0, 0, 0, .25) 0px 15px 20px -6px
   .section-info-background
     background-color: $section-info
     position: absolute
@@ -64,31 +64,31 @@ body
     margin-bottom: 28px
 
 h1, h2, h3, h4, h5, h6
-  color: $grayDark
+  color: $gray-dark
 
 table
   &.no-rounded-corners
-    +border-radius(0px)
+    border-radius 0px
     thead:first-child
       tr:first-child
         th:first-child, th:last-child
-          +border-radius(0px)
+          border-radius 0px
     thead:last-child
       tr:last-child
         th:first-child, th:last-child
-          +border-radius(0px)
+          border-radius 0px
     tbody:first-child
       tr:first-child
         td:first-child, td:last-child
-          +border-radius(0px)
+          border-radius 0px
     tbody:last-child
       tr:last-child
         td:first-child, td:last-child
-          +border-radius(0px)
+          border-radius 0px
 
 #bucky-box-controls
   background-color: $black
-  color: $grayLighter
+  color: $gray-lighter
   padding: 10px 0
   a
     color: $white
@@ -98,7 +98,7 @@ table
     .account-dropdown
       padding: 0
       border: 1px solid #aaa
-      +border-radius(0px)
+      border-radius 0px
       > *
         padding: 4px 8px
         border: 1px solid #000
@@ -118,8 +118,8 @@ table
           font-weight: normal
 
 #public-banner
-  background-color: $grayDarker
-  color: $grayLighter
+  background-color: $gray-darker
+  color: $gray-lighter
   padding: 10px 0px
   margin-bottom: 28px
   #company-logo
@@ -133,5 +133,5 @@ table
     margin-bottom: $section-spacing
 
 .btn-process
-  +buttonBackground($btnProcessBackground, $btnProcessBackgroundHighlight)
+  buttonBackground: $btnProcessBackground $btnProcessBackgroundHighlight
 

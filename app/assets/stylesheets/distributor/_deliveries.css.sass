@@ -12,13 +12,13 @@ $navigation-month: #5c5c5c
   height: 66px
   margin-bottom: 1em
   .jspHorizontalBar
-    +border-radius(4px)
+    border-radius 4px
     height: 8px
     .jspTrack
-      +border-radius(4px)
+      border-radius 4px
       background-color: lighten($navigation-header, 25%)
       .jspDrag
-        +border-radius(4px)
+        border-radius 4px
         background-color: $navigation-header
   ul
     margin: 0px
@@ -30,14 +30,14 @@ $navigation-month: #5c5c5c
       margin-left: 0px
       margin-right: -2px
       border: 2px solid $white
-      +border-radius(10px)
-      +single-transition(border-color, 0.25s, ease-in-out)
+      border-radius 10px
+      single-transition: border-color 0.25s ease-in-out
       &#selected, &:hover
-        +border-radius(10px)
-        +single-transition(border-color, 0.25s, ease-in-out)
+        border-radius 10px
+        single-transition: border-color 0.25s ease-in-out
         border: 2px solid $navigation-selected
       &.month
-        +border-radius(6px)
+        border-radius 6px
         border: 2px solid $navigation-month
         color: $navigation-month
         vertical-align: text-bottom
@@ -165,7 +165,7 @@ $navigation-month: #5c5c5c
         font-weight: bold
         color: $textColor
         &:hover
-          color: $linkColor
+          color: $link-color
           text-decoration: none
       .address-description
         font-size: 13px

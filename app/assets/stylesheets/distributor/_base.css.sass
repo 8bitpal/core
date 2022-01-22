@@ -7,7 +7,7 @@
     right: -50%
     font-weight: bold
     text-align: center
-    +border-top-radius(0px)
+    border-top-radius 0px
     border-top-width: 0px
     margin-bottom: 0px
 
@@ -17,7 +17,7 @@
 p.note-field
   background-color: $note-colour
   padding: 0.25em 0.5em
-  +border-radius(0.2em)
+  border-radius 0.2em
 
 table.table
   tr.new-row
@@ -29,7 +29,7 @@ table.table
         padding: 5px 0px
         text-align: center
         background-color: $action-colour
-        +border-radius(0.4em)
+        border-radius 0.4em
         &:hover
           text-decoration: none
           background-color: $action-colour-hover
@@ -53,32 +53,32 @@ table.table
       &:first-child
         .new-form-input
           margin-left: 5px
-          +border-left-radius(0.4em)
+          border-left-radius 0.4em
       &:last-child
         .new-form-input
           margin-right: 5px
-          +border-right-radius(0.4em)
+          border-right-radius 0.4em
 
 =site-nav-link($selector, $image)
   a#{$selector}
     width: 70px
     text-align: center
-    color: $grayLight
-    +single-transition(color, 0.5s, ease-in-out)
+    color: $gray-light
+    single-transition color 0.5s ease-in-out
     .nav-image
       margin-left: auto
       margin-right: auto
       height: 52px
       width: 52px
       background-image: image-url($image + '-grey.png')
-      +single-transition(background-image, 0.5s, ease-in-out)
+      single-transition background-image 0.5s ease-in-out
     &:hover
       text-decoration: none
       color: #000000
-      +single-transition(color, 0.5s, ease-in-out)
+      single-transition color 0.5s ease-in-out
       .nav-image
         background-image: image-url($image + '.png')
-        +single-transition(backbround-image, 0.5s, ease-in-out)
+        single-transition backbround-image 0.5s ease-in-out
   &.active
     a#{$selector}
       color: #000000
@@ -195,7 +195,7 @@ body
     #sub-nav
       background-color: rgba(255,255,255,0.9)
       padding: 8px 0
-      border-bottom: 1px solid $grayLight
+      border-bottom: 1px solid $gray-light
       padding-bottom: 14px
       margin-bottom: 14px
       .nav-pills
@@ -248,7 +248,7 @@ body
 #notification-dropdown
   .clear-notifications
     background-color: $action-colour
-    +border-bottom-radius(6px)
+    border-bottom-radius 6px
   padding: 0
 
 #distributor_send_email.modal
@@ -269,7 +269,7 @@ body
   .alert
     margin: 0
     padding: 4px 8px
-    +border-radius(0px)
+    border-radius 0px
 
   .recipients
     margin-left: 7px
@@ -356,7 +356,7 @@ body
       .close
         margin-top: -3px
       .popover-content
-        +columns(2)
+        columns: 2
 
 .payment-message
   color: #000
