@@ -22,7 +22,7 @@ class Extra < ActiveRecord::Base
   def visible; !hidden; end
 
   def visible=(value)
-    self[:hidden] = !value.to_bool
+    self[:hidden] = !value.to_bn
   end
 
   def to_hash

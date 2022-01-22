@@ -29,8 +29,8 @@ class Distributor::SettingsController < Distributor::BaseController
 
   def spend_limit_confirmation
     spend_limit = BigDecimal.new(params[:spend_limit]) * BigDecimal.new(100)
-    update_existing = params[:update_existing].to_bool
-    send_halt_email = params[:send_halt_email].to_bool
+    update_existing = params[:update_existing].to_bn
+    send_halt_email = params[:send_halt_email].to_bn
     count = current_distributor.number_of_customers_halted_after_update(spend_limit, update_existing)
     if count.positive?
       count_emailed = current_distributor.number_of_customers_emailed_after_update(spend_limit, update_existing)
@@ -47,7 +47,7 @@ class Distributor::SettingsController < Distributor::BaseController
 private
 
   def save_webstore_message(form)
-    newly_activated_webstore = !current_distributor.active_webstore && form.webstore_enabled.to_bool
+    newly_activated_webstore = !current_distributor.active_webstore && form.webstore_enabled.to_bn
 
     if newly_activated_webstore
       "Your #{view_context.link_to('Web Store', current_distributor.webstore_url, target: '_blank')} is now active.".html_safe

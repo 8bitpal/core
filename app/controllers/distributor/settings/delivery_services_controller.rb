@@ -20,7 +20,7 @@ class Distributor::Settings::DeliveryServicesController < Distributor::BaseContr
   end
 
   def update
-    return destroy if params[:delivery_service][:delete].to_s.to_bool # XXX temporary ugly pseudo REST
+    return destroy if params[:delivery_service][:delete].to_s.to_bn # XXX temporary ugly pseudo REST
 
     delivery_service_params = params[:delivery_service]
     delivery_service_params.delete(:delete) # XXX see above
