@@ -11,8 +11,5 @@ class CreatePayments < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :payments, :distributor_id
-    add_index :payments, :customer_id
-    add_index :payments, :account_id
   end
 end

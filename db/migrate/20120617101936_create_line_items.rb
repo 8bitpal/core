@@ -6,6 +6,5 @@ class CreateLineItems < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :line_items, :distributor_id
   end
 end

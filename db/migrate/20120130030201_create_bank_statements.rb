@@ -6,6 +6,5 @@ class CreateBankStatements < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :bank_statements, :distributor_id
   end
 end

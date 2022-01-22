@@ -9,6 +9,5 @@ class CreateBankInformation < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :bank_information, :distributor_id
   end
 end

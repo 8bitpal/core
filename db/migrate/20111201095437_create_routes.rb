@@ -13,6 +13,5 @@ class CreateRoutes < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :routes, :distributor_id
   end
 end

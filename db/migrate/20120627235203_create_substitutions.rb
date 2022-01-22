@@ -6,7 +6,5 @@ class CreateSubstitutions < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :substitutions, :order_id
-    add_index :substitutions, :line_item_id
   end
 end

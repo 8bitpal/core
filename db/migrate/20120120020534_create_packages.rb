@@ -7,6 +7,5 @@ class CreatePackages < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :packages, :packing_list_id
   end
 end

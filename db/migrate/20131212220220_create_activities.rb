@@ -6,7 +6,5 @@ class CreateActivities < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-
-    add_index :activities, :customer_id
   end
 end

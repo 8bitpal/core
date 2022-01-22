@@ -17,7 +17,5 @@ class CreateDeductions < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :deductions, :distributor_id
-    add_index :deductions, :account_id
   end
 end

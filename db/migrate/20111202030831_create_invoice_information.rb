@@ -11,6 +11,5 @@ class CreateInvoiceInformation < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :invoice_information, :distributor_id
   end
 end

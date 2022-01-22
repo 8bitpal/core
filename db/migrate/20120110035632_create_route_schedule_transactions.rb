@@ -6,6 +6,5 @@ class CreateRouteScheduleTransactions < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :route_schedule_transactions, :route_id
   end
 end

@@ -1,5 +1,5 @@
 class Distributor::Pricing < ActiveRecord::Base
-  attr_accessible :name, :flat_fee, :percentage_fee, :percentage_fee_max, :discount_percentage, :currency, :invoicing_day_of_the_month
+  attr_accessor :name, :flat_fee, :percentage_fee, :percentage_fee_max, :discount_percentage, :currency, :invoicing_day_of_the_month
 
   belongs_to :distributor
 

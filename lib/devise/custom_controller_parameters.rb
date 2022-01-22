@@ -1,6 +1,6 @@
 module Devise::CustomControllerParameters
   def self.included(base)
-    base.before_filter :setup_custom_variables
+    base.before_action :setup_custom_variables
   end
 
 private

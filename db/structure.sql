@@ -1,10 +1,3 @@
---
--- PostgreSQL database dump
---
-
--- Dumped from database version 9.5.22
--- Dumped by pg_dump version 12.3
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -18,275 +11,20 @@ SET row_security = off;
 
 SET default_tablespace = '';
 
---
--- Name: schedule_rules; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.schedule_rules (
-    id integer NOT NULL,
-    recur character varying(255),
-    start date,
-    mon boolean,
-    tue boolean,
-    wed boolean,
-    thu boolean,
-    fri boolean,
-    sat boolean,
-    sun boolean,
-    schedule_pause_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    scheduleable_id integer,
-    scheduleable_type character varying(255),
-    halted boolean DEFAULT false,
-    week integer DEFAULT 0
-);
-
-
---
--- Name: is_paused(date, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.is_paused(test_date date, schedule_rule public.schedule_rules) RETURNS boolean
-    LANGUAGE plpgsql STABLE
-    AS $$
-BEGIN
-  IF EXISTS (SELECT *
-     FROM schedule_pauses
-     WHERE schedule_pauses.id = schedule_rule.schedule_pause_id
-     AND schedule_pauses.start <= test_date
-     AND (schedule_pauses.finish > test_date
-     OR schedule_pauses.finish IS NULL)) THEN
-    return TRUE;
-  ELSE
-    return FALSE;
-  END IF;
-END;
-$$;
-
-
---
--- Name: next_occurrence(date, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.next_occurrence(from_date date, schedule_rule public.schedule_rules) RETURNS date
-    LANGUAGE plpgsql STABLE
-    AS $$
-DECLARE
-  next_date DATE;
-BEGIN
-  next_date := from_date;
-  LOOP
-    -- Get the next possible occurrence
-    next_date := unpaused_next_occurrence(next_date, schedule_rule);
-
-    -- Test if it falls in a pause, exit if not
-    EXIT WHEN NOT is_paused(next_date, schedule_rule);
-
-    -- Apparently that one was in a pause, start looking again from the end of a pause
-    next_date := pause_finish(next_date, schedule_rule);
-
-    -- If the pause_finish returns NULL we can assume the pause never finishes, thus there is never a next_occurrence
-    EXIT WHEN next_date IS NULL;
-  END LOOP;
-  return next_date;
-END;
-$$;
-
-
---
--- Name: next_occurrence(date, boolean, boolean, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.next_occurrence(from_date date, ignore_pauses boolean, ignore_halts boolean, schedule_rule public.schedule_rules) RETURNS date
-    LANGUAGE plpgsql STABLE
-    AS $$
-DECLARE
-  next_date DATE;
-BEGIN
-  next_date := from_date;
-  IF NOT ignore_halts AND schedule_rule.halted THEN
-    return null;
-  ELSE
-    LOOP
-      -- Get the next possible occurrence
-      next_date := unpaused_next_occurrence(next_date, schedule_rule);
-
-      -- Test if it falls in a pause, exit if not
-      EXIT WHEN ignore_pauses OR NOT is_paused(next_date, schedule_rule);
-
-      -- Apparently that one was in a pause, start looking again from the end of a pause
-      next_date := pause_finish(next_date, schedule_rule);
-
-      -- If the pause_finish returns NULL we can assume the pause never finishes, thus there is never a next_occurrence
-      EXIT WHEN next_date IS NULL;
-    END LOOP;
-    return next_date;
-  END IF;
-END;
-$$;
-
-
---
--- Name: on_day(integer, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.on_day(day integer, schedule_rule public.schedule_rules) RETURNS boolean
-    LANGUAGE plpgsql IMMUTABLE
-    AS $$
-DECLARE
-  result DATE;
-BEGIN
-  -- If it is a one off, then it doesn't have a mon -> sun schedule, check the day it starts on
-  IF schedule_rule.recur IS NULL OR schedule_rule.recur = 'single' THEN
-    return EXTRACT(DOW FROM schedule_rule.start) = day;
-  ELSE
-    CASE day
-      WHEN 0 THEN
-        RETURN schedule_rule.sun;
-      WHEN 1 THEN
-        RETURN schedule_rule.mon;
-      WHEN 2 THEN
-        RETURN schedule_rule.tue;
-      WHEN 3 THEN
-        RETURN schedule_rule.wed;
-      WHEN 4 THEN
-        RETURN schedule_rule.thu;
-      WHEN 5 THEN
-        RETURN schedule_rule.fri;
-      WHEN 6 THEN
-        RETURN schedule_rule.sat;
-      ELSE
-        RETURN FALSE;
-    END CASE;
-  END IF;
-END;
-$$;
-
-
---
--- Name: pause_finish(date, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.pause_finish(test_date date, schedule_rule public.schedule_rules) RETURNS date
-    LANGUAGE plpgsql STABLE
-    AS $$
-DECLARE
-  result DATE;
-BEGIN
-  SELECT schedule_pauses.finish
-  FROM schedule_pauses
-  WHERE schedule_pauses.id = schedule_rule.schedule_pause_id
-  AND schedule_pauses.start <= test_date
-  AND (schedule_pauses.finish > test_date
-  OR schedule_pauses.finish IS NULL)
-  ORDER BY schedule_pauses.finish DESC
-  LIMIT 1 INTO result;
-  RETURN result;
-END;
-$$;
-
-
---
--- Name: unpaused_next_occurrence(date, public.schedule_rules); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.unpaused_next_occurrence(from_date date, schedule_rule public.schedule_rules) RETURNS date
-    LANGUAGE plpgsql IMMUTABLE
-    AS $$
-DECLARE
-  from_wday int;
-  days_from_now int;
-  week_days int[7];
-  next_date date;
-BEGIN
-  -- From which date should we start looking for the next occurrence?  The schedule_rule's start date or the param's from_date
-  IF from_date < schedule_rule.start THEN
-    from_date := schedule_rule.start;
-  END IF;
-  
-  -- What is the day of the week? Sunday: 0, Monday: 1, etc...
-  from_wday := EXTRACT(DOW from from_date);
-
-  CASE schedule_rule.recur
-  WHEN 'weekly' THEN
-  -- ==================== WEEKLY ====================
-    -- Loop until we find the next occurrence
-    -- The '0' in 0..6 means we consider the next occurrence today, not tomorrow.
-    FOR i IN 0..6 LOOP
-      days_from_now := i;
-      EXIT WHEN on_day(mod(from_wday + days_from_now, 7), schedule_rule);
-    END LOOP;
-
-    return from_date + days_from_now;
-  WHEN 'fortnightly' THEN
-  -- ==================== FORTNIGHTLY ====================
-    -- Loop until we find the next occurrence
-    -- The '1' in 1..14 means we consider the next occurrence tomorrow, not today and we check a full fortnightly cycle
-    FOR i IN 0..13 LOOP
-      days_from_now := i;
-      EXIT WHEN on_day(mod(from_wday + days_from_now, 7), schedule_rule) AND
-        ((((from_date + days_from_now) - (schedule_rule.start - CAST(EXTRACT(DOW from schedule_rule.start) AS integer))) / 7) % 2) = 0;
-    END LOOP;
-
-    return from_date + days_from_now;
-  WHEN 'monthly' THEN
-  -- ==================== MONTHLY ====================
-    -- The first day of the month
-    next_date := DATE_TRUNC('month', from_date);
-
-    -- Number of week days (Mondays, Tuesdays and so on)
-    week_days := array[0,0,0,0,0,0,0];
-
-    LOOP
-      IF next_date >= from_date AND
-        -- Delivery day?
-        on_day(EXTRACT(DOW FROM next_date)::integer, schedule_rule) AND
-        -- Desired nth week day of the month?
-        week_days[EXTRACT(DOW FROM next_date)::integer + 1] = schedule_rule.week THEN
-        RETURN next_date;
-      END IF;
-
-      -- Count the number of week days
-      week_days[EXTRACT(DOW FROM next_date)::integer + 1] := week_days[EXTRACT(DOW FROM next_date)::integer + 1] + 1;
-
-      -- Next day
-      next_date := next_date + 1;
-
-      -- Reset counters if we hit next month
-      IF EXTRACT(DAY FROM next_date)::integer = 1 THEN
-        week_days := array[0,0,0,0,0,0,0];
-      END IF;
-    END LOOP;
-  ELSE
-    IF schedule_rule.recur IS NULL OR schedule_rule.recur = 'single' THEN
-  -- ==================== ONE OFF / SINGLE ====================
-      IF from_date > schedule_rule.start THEN
-        return NULL;
-      ELSE
-        RETURN from_date;
-      END IF;
-    ELSE
-      RAISE EXCEPTION 'schedule_rules.recur should be NULL, single, weekly, fortnightly or monthly';
-  END IF;
-  END CASE;
-
-END;
-$$;
-
+SET default_table_access_method = heap;
 
 --
 -- Name: accounts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.accounts (
-    id integer NOT NULL,
-    customer_id integer,
+    id bigint NOT NULL,
+    customer_id bigint,
     balance_cents integer DEFAULT 0 NOT NULL,
-    currency character varying(255),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    default_payment_method character varying(255)
+    currency character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    default_payment_method character varying
 );
 
 
@@ -310,15 +48,114 @@ ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 
 
 --
+-- Name: active_storage_attachments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_attachments (
+    id bigint NOT NULL,
+    name character varying NOT NULL,
+    record_type character varying NOT NULL,
+    record_id bigint NOT NULL,
+    blob_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: active_storage_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_attachments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_attachments_id_seq OWNED BY public.active_storage_attachments.id;
+
+
+--
+-- Name: active_storage_blobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_blobs (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    filename character varying NOT NULL,
+    content_type character varying,
+    metadata text,
+    service_name character varying NOT NULL,
+    byte_size bigint NOT NULL,
+    checksum character varying,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: active_storage_blobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_blobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_blobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_blobs_id_seq OWNED BY public.active_storage_blobs.id;
+
+
+--
+-- Name: active_storage_variant_records; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_variant_records (
+    id bigint NOT NULL,
+    blob_id bigint NOT NULL,
+    variation_digest character varying NOT NULL
+);
+
+
+--
+-- Name: active_storage_variant_records_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_variant_records_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_variant_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_variant_records_id_seq OWNED BY public.active_storage_variant_records.id;
+
+
+--
 -- Name: activities; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.activities (
-    id integer NOT NULL,
-    customer_id integer NOT NULL,
+    id bigint NOT NULL,
+    customer_id bigint NOT NULL,
     action text NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -346,20 +183,20 @@ ALTER SEQUENCE public.activities_id_seq OWNED BY public.activities.id;
 --
 
 CREATE TABLE public.addresses (
-    id integer NOT NULL,
-    customer_id integer,
-    address_1 character varying(255),
-    address_2 character varying(255),
-    suburb character varying(255),
-    city character varying(255),
-    postcode character varying(255),
+    id bigint NOT NULL,
+    customer_id bigint,
+    address_1 character varying,
+    address_2 character varying,
+    suburb character varying,
+    city character varying,
+    postcode character varying,
     delivery_note text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    mobile_phone character varying(255),
-    home_phone character varying(255),
-    work_phone character varying(255),
-    address_hash character varying(255)
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    mobile_phone character varying,
+    home_phone character varying,
+    work_phone character varying,
+    address_hash character varying
 );
 
 
@@ -387,19 +224,19 @@ ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
 --
 
 CREATE TABLE public.admins (
-    id integer NOT NULL,
-    email character varying(255) DEFAULT ''::character varying NOT NULL,
-    encrypted_password character varying(128) DEFAULT ''::character varying NOT NULL,
-    reset_password_token character varying(255),
-    reset_password_sent_at timestamp without time zone,
-    remember_created_at timestamp without time zone,
+    id bigint NOT NULL,
+    email character varying DEFAULT ''::character varying NOT NULL,
+    encrypted_password character varying DEFAULT ''::character varying NOT NULL,
+    reset_password_token character varying,
+    reset_password_sent_at timestamp(6) without time zone,
+    remember_created_at timestamp(6) without time zone,
     sign_in_count integer DEFAULT 0,
-    current_sign_in_at timestamp without time zone,
-    last_sign_in_at timestamp without time zone,
-    current_sign_in_ip character varying(255),
-    last_sign_in_ip character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    current_sign_in_at timestamp(6) without time zone,
+    last_sign_in_at timestamp(6) without time zone,
+    current_sign_in_ip character varying,
+    last_sign_in_ip character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -423,18 +260,30 @@ ALTER SEQUENCE public.admins_id_seq OWNED BY public.admins.id;
 
 
 --
+-- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ar_internal_metadata (
+    key character varying NOT NULL,
+    value character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: bank_information; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.bank_information (
-    id integer NOT NULL,
-    distributor_id integer,
-    name character varying(255),
-    account_name character varying(255),
-    account_number character varying(255),
+    id bigint NOT NULL,
+    distributor_id bigint,
+    name character varying,
+    account_name character varying,
+    account_number character varying,
     customer_message text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     cod_payment_message text
 );
 
@@ -463,11 +312,11 @@ ALTER SEQUENCE public.bank_information_id_seq OWNED BY public.bank_information.i
 --
 
 CREATE TABLE public.box_extras (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     box_id integer,
     extra_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -495,9 +344,9 @@ ALTER SEQUENCE public.box_extras_id_seq OWNED BY public.box_extras.id;
 --
 
 CREATE TABLE public.boxes (
-    id integer NOT NULL,
-    distributor_id integer,
-    name character varying(255),
+    id bigint NOT NULL,
+    distributor_id bigint,
+    name character varying,
     description text,
     likes boolean DEFAULT false NOT NULL,
     dislikes boolean DEFAULT false NOT NULL,
@@ -505,9 +354,9 @@ CREATE TABLE public.boxes (
     available_single boolean DEFAULT false NOT NULL,
     available_weekly boolean DEFAULT false NOT NULL,
     available_fourtnightly boolean DEFAULT false NOT NULL,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    box_image character varying(255),
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    box_image character varying,
     available_monthly boolean DEFAULT false NOT NULL,
     extras_limit integer DEFAULT 0,
     hidden boolean DEFAULT false NOT NULL,
@@ -572,10 +421,10 @@ ALTER SEQUENCE public.countries_id_seq OWNED BY public.countries.id;
 --
 
 CREATE TABLE public.cron_logs (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     log text,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     details text
 );
 
@@ -604,11 +453,11 @@ ALTER SEQUENCE public.cron_logs_id_seq OWNED BY public.cron_logs.id;
 --
 
 CREATE TABLE public.customer_checkouts (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     distributor_id integer,
     customer_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -636,11 +485,11 @@ ALTER SEQUENCE public.customer_checkouts_id_seq OWNED BY public.customer_checkou
 --
 
 CREATE TABLE public.customer_logins (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     distributor_id integer,
     customer_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -668,32 +517,32 @@ ALTER SEQUENCE public.customer_logins_id_seq OWNED BY public.customer_logins.id;
 --
 
 CREATE TABLE public.customers (
-    id integer NOT NULL,
-    first_name character varying(255),
-    email character varying(255),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    last_name character varying(255),
+    id bigint NOT NULL,
+    first_name character varying,
+    email character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    last_name character varying,
     distributor_id integer,
     delivery_service_id integer,
     encrypted_password character varying(128) DEFAULT ''::character varying NOT NULL,
-    reset_password_token character varying(255),
-    reset_password_sent_at timestamp without time zone,
-    remember_created_at timestamp without time zone,
+    reset_password_token character varying,
+    reset_password_sent_at timestamp(6) without time zone,
+    remember_created_at timestamp(6) without time zone,
     sign_in_count integer DEFAULT 0,
-    current_sign_in_at timestamp without time zone,
-    last_sign_in_at timestamp without time zone,
-    current_sign_in_ip character varying(255),
-    last_sign_in_ip character varying(255),
-    password_salt character varying(255),
-    confirmation_token character varying(255),
-    confirmed_at timestamp without time zone,
-    confirmation_sent_at timestamp without time zone,
+    current_sign_in_at timestamp(6) without time zone,
+    last_sign_in_at timestamp(6) without time zone,
+    current_sign_in_ip character varying,
+    last_sign_in_ip character varying,
+    password_salt character varying,
+    confirmation_token character varying,
+    confirmed_at timestamp(6) without time zone,
+    confirmation_sent_at timestamp(6) without time zone,
     failed_attempts integer DEFAULT 0,
-    unlock_token character varying(255),
-    locked_at timestamp without time zone,
-    authentication_token character varying(255),
-    discount numeric DEFAULT 0 NOT NULL,
+    unlock_token character varying,
+    locked_at timestamp(6) without time zone,
+    authentication_token character varying,
+    discount numeric DEFAULT 0.0 NOT NULL,
     number integer,
     notes text,
     special_order_preference text,
@@ -729,22 +578,22 @@ ALTER SEQUENCE public.customers_id_seq OWNED BY public.customers.id;
 --
 
 CREATE TABLE public.deductions (
-    id integer NOT NULL,
-    distributor_id integer,
-    account_id integer DEFAULT 0 NOT NULL,
+    id bigint NOT NULL,
+    distributor_id bigint,
+    account_id bigint DEFAULT 0 NOT NULL,
     amount_cents integer DEFAULT 0 NOT NULL,
-    kind character varying(255),
+    kind character varying,
     description text,
     reversed boolean,
-    reversed_at timestamp without time zone,
+    reversed_at timestamp(6) without time zone,
     transaction_id integer,
     reversal_transaction_id integer,
-    source character varying(255),
+    source character varying,
     deductable_id integer,
-    deductable_type character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    display_time timestamp without time zone
+    deductable_type character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    display_time timestamp(6) without time zone
 );
 
 
@@ -772,18 +621,18 @@ ALTER SEQUENCE public.deductions_id_seq OWNED BY public.deductions.id;
 --
 
 CREATE TABLE public.delayed_jobs (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     priority integer DEFAULT 0,
     attempts integer DEFAULT 0,
     handler text,
     last_error text,
-    run_at timestamp without time zone,
-    locked_at timestamp without time zone,
-    failed_at timestamp without time zone,
-    locked_by character varying(255),
-    queue character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    run_at timestamp(6) without time zone,
+    locked_at timestamp(6) without time zone,
+    failed_at timestamp(6) without time zone,
+    locked_by character varying,
+    queue character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -811,13 +660,13 @@ ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
 --
 
 CREATE TABLE public.deliveries (
-    id integer NOT NULL,
-    order_id integer,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    status character varying(255),
+    id bigint NOT NULL,
+    order_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    status character varying,
     delivery_service_id integer,
-    status_change_type character varying(255),
+    status_change_type character varying,
     delivery_list_id integer,
     "position" integer,
     package_id integer,
@@ -850,11 +699,11 @@ ALTER SEQUENCE public.deliveries_id_seq OWNED BY public.deliveries.id;
 --
 
 CREATE TABLE public.delivery_lists (
-    id integer NOT NULL,
-    distributor_id integer,
+    id bigint NOT NULL,
+    distributor_id bigint,
     date date,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -882,13 +731,13 @@ ALTER SEQUENCE public.delivery_lists_id_seq OWNED BY public.delivery_lists.id;
 --
 
 CREATE TABLE public.delivery_sequence_orders (
-    id integer NOT NULL,
-    address_hash character varying(255),
+    id bigint NOT NULL,
+    address_hash character varying,
     delivery_service_id integer,
     day integer,
     "position" integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -916,11 +765,11 @@ ALTER SEQUENCE public.delivery_sequence_orders_id_seq OWNED BY public.delivery_s
 --
 
 CREATE TABLE public.delivery_service_schedule_transactions (
-    id integer NOT NULL,
-    delivery_service_id integer,
+    id bigint NOT NULL,
+    delivery_service_id bigint,
     schedule text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -948,11 +797,11 @@ ALTER SEQUENCE public.delivery_service_schedule_transactions_id_seq OWNED BY pub
 --
 
 CREATE TABLE public.delivery_services (
-    id integer NOT NULL,
-    distributor_id integer,
-    name character varying(255),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
+    id bigint NOT NULL,
+    distributor_id bigint,
+    name character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     fee_cents integer DEFAULT 0 NOT NULL,
     pickup_point boolean DEFAULT false NOT NULL,
     instructions text
@@ -983,16 +832,16 @@ ALTER SEQUENCE public.delivery_services_id_seq OWNED BY public.delivery_services
 --
 
 CREATE TABLE public.distributor_invoices (
-    id integer NOT NULL,
-    distributor_id integer NOT NULL,
+    id bigint NOT NULL,
+    distributor_id bigint NOT NULL,
     "from" date NOT NULL,
     "to" date NOT NULL,
     description text NOT NULL,
     amount_cents integer NOT NULL,
-    currency character varying(255) NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    number character varying(255),
+    currency character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    number character varying,
     paid boolean DEFAULT false NOT NULL
 );
 
@@ -1021,10 +870,10 @@ ALTER SEQUENCE public.distributor_invoices_id_seq OWNED BY public.distributor_in
 --
 
 CREATE TABLE public.distributor_logins (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     distributor_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1052,16 +901,16 @@ ALTER SEQUENCE public.distributor_logins_id_seq OWNED BY public.distributor_logi
 --
 
 CREATE TABLE public.distributor_pricings (
-    id integer NOT NULL,
-    distributor_id integer,
-    name character varying(255) NOT NULL,
+    id bigint NOT NULL,
+    distributor_id bigint,
+    name character varying NOT NULL,
     flat_fee_cents integer DEFAULT 0 NOT NULL,
-    percentage_fee numeric DEFAULT 0 NOT NULL,
+    percentage_fee numeric DEFAULT 0.0 NOT NULL,
     percentage_fee_max_cents integer DEFAULT 0 NOT NULL,
-    discount_percentage numeric DEFAULT 0 NOT NULL,
-    currency character varying(255) NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    discount_percentage numeric DEFAULT 0.0 NOT NULL,
+    currency character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     invoicing_day_of_the_month integer DEFAULT 1 NOT NULL
 );
 
@@ -1090,58 +939,59 @@ ALTER SEQUENCE public.distributor_pricings_id_seq OWNED BY public.distributor_pr
 --
 
 CREATE TABLE public.distributors (
-    id integer NOT NULL,
-    email character varying(255) DEFAULT ''::character varying NOT NULL,
-    encrypted_password character varying(128) DEFAULT ''::character varying NOT NULL,
-    reset_password_token character varying(255),
-    reset_password_sent_at timestamp without time zone,
-    remember_created_at timestamp without time zone,
+    id bigint NOT NULL,
+    email character varying DEFAULT ''::character varying NOT NULL,
+    encrypted_password character varying DEFAULT ''::character varying NOT NULL,
+    reset_password_token character varying,
+    reset_password_sent_at timestamp(6) without time zone,
+    remember_created_at timestamp(6) without time zone,
     sign_in_count integer DEFAULT 0,
-    current_sign_in_at timestamp without time zone,
-    last_sign_in_at timestamp without time zone,
-    current_sign_in_ip character varying(255),
-    last_sign_in_ip character varying(255),
-    password_salt character varying(255),
-    confirmation_token character varying(255),
-    confirmed_at timestamp without time zone,
-    confirmation_sent_at timestamp without time zone,
+    current_sign_in_at timestamp(6) without time zone,
+    last_sign_in_at timestamp(6) without time zone,
+    current_sign_in_ip character varying,
+    last_sign_in_ip character varying,
+    password_salt character varying,
+    confirmation_token character varying,
+    confirmed_at timestamp(6) without time zone,
+    confirmation_sent_at timestamp(6) without time zone,
+    unconfirmed_email character varying,
     failed_attempts integer DEFAULT 0,
-    unlock_token character varying(255),
-    locked_at timestamp without time zone,
-    authentication_token character varying(255),
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    name character varying(255),
-    url character varying(255),
-    company_logo character varying(255),
+    unlock_token character varying,
+    locked_at timestamp(6) without time zone,
+    authentication_token character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    name character varying,
+    url character varying,
+    company_logo character varying,
     completed_wizard boolean DEFAULT false NOT NULL,
-    parameter_name character varying(255),
+    parameter_name character varying,
     separate_bucky_fee boolean DEFAULT false,
-    support_email character varying(255),
-    time_zone character varying(255),
+    time_zone character varying,
+    support_email character varying,
     advance_hour integer,
     advance_days integer,
-    currency character varying(255),
+    currency character varying,
     country_id integer,
     consumer_delivery_fee_cents integer,
     active_webstore boolean DEFAULT false NOT NULL,
-    city character varying(255),
-    company_team_image character varying(255),
+    city character varying,
+    company_team_image character varying,
     about text,
     details text,
-    facebook_url character varying(255),
+    facebook_url character varying,
     customers_show_intro boolean DEFAULT true NOT NULL,
     deliveries_index_packing_intro boolean DEFAULT true NOT NULL,
     deliveries_index_deliveries_intro boolean DEFAULT true NOT NULL,
     payments_index_intro boolean DEFAULT true NOT NULL,
     customers_index_intro boolean DEFAULT true NOT NULL,
+    customer_can_remove_orders boolean DEFAULT true,
     has_balance_threshold boolean DEFAULT false,
     default_balance_threshold_cents integer DEFAULT 0,
     send_email boolean DEFAULT true,
     send_halted_email boolean,
     feature_spend_limit boolean DEFAULT true,
-    contact_name character varying(255),
-    customer_can_remove_orders boolean DEFAULT true,
+    contact_name character varying,
     collect_phone boolean DEFAULT true NOT NULL,
     last_seen_at timestamp without time zone,
     notes text,
@@ -1149,33 +999,33 @@ CREATE TABLE public.distributors (
     payment_bank_deposit boolean DEFAULT true,
     payment_credit_card boolean DEFAULT false,
     require_postcode boolean DEFAULT false NOT NULL,
+    keep_me_updated boolean DEFAULT true,
     require_phone boolean DEFAULT true NOT NULL,
     require_address_1 boolean DEFAULT true NOT NULL,
     require_address_2 boolean DEFAULT false NOT NULL,
     require_suburb boolean DEFAULT false NOT NULL,
     require_city boolean DEFAULT false NOT NULL,
-    keep_me_updated boolean DEFAULT true,
     email_templates text,
+    phone character varying,
     notify_address_change boolean,
-    phone character varying(255),
+    sidebar_description text,
     collect_delivery_note boolean DEFAULT true NOT NULL,
     require_delivery_note boolean DEFAULT false NOT NULL,
     notify_for_new_webstore_order boolean DEFAULT true NOT NULL,
-    sidebar_description text,
-    api_key character varying(255),
-    api_secret character varying(255),
+    api_key character varying,
+    api_secret character varying,
     email_customer_on_new_webstore_order boolean DEFAULT true NOT NULL,
     email_customer_on_new_order boolean DEFAULT false NOT NULL,
     email_distributor_on_new_webstore_order boolean DEFAULT false NOT NULL,
     customer_can_edit_orders boolean DEFAULT true NOT NULL,
     payment_paypal boolean DEFAULT false NOT NULL,
-    paypal_email character varying(255),
-    locale character varying(255) DEFAULT 'en'::character varying NOT NULL,
+    paypal_email character varying,
+    locale character varying DEFAULT 'en'::character varying NOT NULL,
     overdue text DEFAULT ''::text NOT NULL,
-    ga_tracking_id character varying(255),
-    status character varying(255) DEFAULT 'trial'::character varying NOT NULL,
-    intercom_id character varying(255),
-    addons character varying(255) DEFAULT ''::character varying NOT NULL
+    ga_tracking_id character varying,
+    status character varying DEFAULT 'trial'::character varying NOT NULL,
+    intercom_id character varying,
+    addons character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -1203,11 +1053,11 @@ ALTER SEQUENCE public.distributors_id_seq OWNED BY public.distributors.id;
 --
 
 CREATE TABLE public.distributors_omni_importers (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     distributor_id integer,
     omni_importer_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1235,15 +1085,15 @@ ALTER SEQUENCE public.distributors_omni_importers_id_seq OWNED BY public.distrib
 --
 
 CREATE TABLE public.events (
-    id integer NOT NULL,
-    distributor_id integer NOT NULL,
-    event_type character varying(255) NOT NULL,
+    id bigint NOT NULL,
+    distributor_id bigint NOT NULL,
+    event_type character varying NOT NULL,
     dismissed boolean DEFAULT false NOT NULL,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    trigger_on timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    trigger_on timestamp(6) without time zone,
     message text,
-    key character varying(255)
+    key character varying
 );
 
 
@@ -1271,11 +1121,11 @@ ALTER SEQUENCE public.events_id_seq OWNED BY public.events.id;
 --
 
 CREATE TABLE public.exclusions (
-    id integer NOT NULL,
-    order_id integer,
-    line_item_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    id bigint NOT NULL,
+    order_id bigint,
+    line_item_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1303,13 +1153,13 @@ ALTER SEQUENCE public.exclusions_id_seq OWNED BY public.exclusions.id;
 --
 
 CREATE TABLE public.extras (
-    id integer NOT NULL,
-    name character varying(255),
-    unit character varying(255),
+    id bigint NOT NULL,
+    name character varying,
+    unit character varying,
     distributor_id integer,
     price_cents integer DEFAULT 0 NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     hidden boolean DEFAULT false
 );
 
@@ -1338,15 +1188,15 @@ ALTER SEQUENCE public.extras_id_seq OWNED BY public.extras.id;
 --
 
 CREATE TABLE public.import_transaction_lists (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     distributor_id integer,
     draft boolean,
     account_type integer,
     csv_file text,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     omni_importer_id integer,
-    status character varying(255)
+    status character varying
 );
 
 
@@ -1374,7 +1224,7 @@ ALTER SEQUENCE public.import_transaction_lists_id_seq OWNED BY public.import_tra
 --
 
 CREATE TABLE public.import_transactions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     customer_id integer,
     transaction_date date,
     amount_cents integer DEFAULT 0 NOT NULL,
@@ -1385,8 +1235,8 @@ CREATE TABLE public.import_transactions (
     match integer,
     transaction_id integer,
     draft boolean,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     payment_id integer,
     raw_data text
 );
@@ -1416,11 +1266,11 @@ ALTER SEQUENCE public.import_transactions_id_seq OWNED BY public.import_transact
 --
 
 CREATE TABLE public.line_items (
-    id integer NOT NULL,
-    distributor_id integer,
-    name character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    id bigint NOT NULL,
+    distributor_id bigint,
+    name character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1448,15 +1298,15 @@ ALTER SEQUENCE public.line_items_id_seq OWNED BY public.line_items.id;
 --
 
 CREATE TABLE public.localised_addresses (
-    id integer NOT NULL,
-    addressable_id integer NOT NULL,
-    addressable_type character varying(255) NOT NULL,
-    street character varying(255),
-    city character varying(255),
-    zip character varying(255),
-    state character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    id bigint NOT NULL,
+    addressable_type character varying NOT NULL,
+    addressable_id bigint NOT NULL,
+    street character varying,
+    city character varying,
+    zip character varying,
+    state character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     lat numeric(15,10),
     lng numeric(15,10)
 );
@@ -1486,15 +1336,15 @@ ALTER SEQUENCE public.localised_addresses_id_seq OWNED BY public.localised_addre
 --
 
 CREATE TABLE public.omni_importers (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     country_id integer,
     rules text,
-    import_transaction_list character varying(255),
-    name character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    payment_type character varying(255),
-    bank_name character varying(255)
+    import_transaction_list character varying,
+    name character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    payment_type character varying,
+    bank_name character varying
 );
 
 
@@ -1522,12 +1372,12 @@ ALTER SEQUENCE public.omni_importers_id_seq OWNED BY public.omni_importers.id;
 --
 
 CREATE TABLE public.order_extras (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     order_id integer,
     extra_id integer,
     count integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1555,12 +1405,12 @@ ALTER SEQUENCE public.order_extras_id_seq OWNED BY public.order_extras.id;
 --
 
 CREATE TABLE public.order_schedule_transactions (
-    id integer NOT NULL,
-    order_id integer,
+    id bigint NOT NULL,
+    order_id bigint,
     schedule text,
-    delivery_id integer,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    delivery_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1588,12 +1438,12 @@ ALTER SEQUENCE public.order_schedule_transactions_id_seq OWNED BY public.order_s
 --
 
 CREATE TABLE public.orders (
-    id integer NOT NULL,
-    box_id integer,
+    id bigint NOT NULL,
+    box_id bigint,
     quantity integer DEFAULT 1 NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     account_id integer,
     active boolean DEFAULT false NOT NULL,
     extras_one_off boolean DEFAULT true,
@@ -1625,22 +1475,22 @@ ALTER SEQUENCE public.orders_id_seq OWNED BY public.orders.id;
 --
 
 CREATE TABLE public.packages (
-    id integer NOT NULL,
-    packing_list_id integer,
+    id bigint NOT NULL,
+    packing_list_id bigint,
     "position" integer,
-    status character varying(255),
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    status character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     order_id integer,
     original_package_id integer,
-    packing_method character varying(255),
+    packing_method character varying,
     archived_address text,
     archived_order_quantity integer,
-    archived_box_name character varying(255),
+    archived_box_name character varying,
     archived_box_price_cents integer DEFAULT 0 NOT NULL,
-    archived_customer_name character varying(255),
+    archived_customer_name character varying,
     archived_delivery_service_fee_cents integer DEFAULT 0 NOT NULL,
-    archived_customer_discount numeric DEFAULT 0 NOT NULL,
+    archived_customer_discount numeric DEFAULT 0.0 NOT NULL,
     archived_extras text,
     archived_consumer_delivery_fee_cents integer DEFAULT 0,
     archived_substitutions text,
@@ -1673,11 +1523,11 @@ ALTER SEQUENCE public.packages_id_seq OWNED BY public.packages.id;
 --
 
 CREATE TABLE public.packing_lists (
-    id integer NOT NULL,
-    distributor_id integer,
+    id bigint NOT NULL,
+    distributor_id bigint,
     date date,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1705,23 +1555,23 @@ ALTER SEQUENCE public.packing_lists_id_seq OWNED BY public.packing_lists.id;
 --
 
 CREATE TABLE public.payments (
-    id integer NOT NULL,
-    distributor_id integer,
-    account_id integer,
+    id bigint NOT NULL,
+    distributor_id bigint,
+    account_id bigint,
     amount_cents integer DEFAULT 0 NOT NULL,
-    kind character varying(255),
+    kind character varying,
     description text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    reference character varying(255),
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    reference character varying,
     reversed boolean,
     reversed_at timestamp without time zone,
     transaction_id integer,
     reversal_transaction_id integer,
-    source character varying(255),
+    source character varying,
     display_time timestamp without time zone,
     payable_id integer,
-    payable_type character varying(255)
+    payable_type character varying
 );
 
 
@@ -1749,11 +1599,11 @@ ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
 --
 
 CREATE TABLE public.schedule_pauses (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     start date,
     finish date,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1774,6 +1624,31 @@ CREATE SEQUENCE public.schedule_pauses_id_seq
 --
 
 ALTER SEQUENCE public.schedule_pauses_id_seq OWNED BY public.schedule_pauses.id;
+
+
+--
+-- Name: schedule_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schedule_rules (
+    id bigint NOT NULL,
+    recur character varying,
+    start date,
+    mon boolean,
+    tue boolean,
+    wed boolean,
+    thu boolean,
+    fri boolean,
+    sat boolean,
+    sun boolean,
+    schedule_pause_id integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    scheduleable_id integer,
+    scheduleable_type character varying,
+    halted boolean DEFAULT false,
+    week integer DEFAULT 0
+);
 
 
 --
@@ -1800,11 +1675,11 @@ ALTER SEQUENCE public.schedule_rules_id_seq OWNED BY public.schedule_rules.id;
 --
 
 CREATE TABLE public.schedule_transactions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     schedule_rule text,
     schedule_rule_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1832,7 +1707,7 @@ ALTER SEQUENCE public.schedule_transactions_id_seq OWNED BY public.schedule_tran
 --
 
 CREATE TABLE public.schema_migrations (
-    version character varying(255) NOT NULL
+    version character varying NOT NULL
 );
 
 
@@ -1841,11 +1716,11 @@ CREATE TABLE public.schema_migrations (
 --
 
 CREATE TABLE public.substitutions (
-    id integer NOT NULL,
-    order_id integer,
-    line_item_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    id bigint NOT NULL,
+    order_id bigint,
+    line_item_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -1873,14 +1748,14 @@ ALTER SEQUENCE public.substitutions_id_seq OWNED BY public.substitutions.id;
 --
 
 CREATE TABLE public.taggings (
-    id integer NOT NULL,
-    tag_id integer,
-    taggable_id integer,
-    taggable_type character varying(255),
-    tagger_id integer,
-    tagger_type character varying(255),
-    context character varying(255),
-    created_at timestamp without time zone
+    id bigint NOT NULL,
+    tag_id bigint,
+    taggable_type character varying,
+    taggable_id bigint,
+    tagger_type character varying,
+    tagger_id bigint,
+    context character varying,
+    created_at timestamp(6) without time zone
 );
 
 
@@ -1908,8 +1783,8 @@ ALTER SEQUENCE public.taggings_id_seq OWNED BY public.taggings.id;
 --
 
 CREATE TABLE public.tags (
-    id integer NOT NULL,
-    name character varying(255),
+    id bigint NOT NULL,
+    name character varying,
     taggings_count integer DEFAULT 0
 );
 
@@ -1938,17 +1813,17 @@ ALTER SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
 --
 
 CREATE TABLE public.transactions (
-    id integer NOT NULL,
-    account_id integer,
+    id bigint NOT NULL,
+    account_id bigint,
     amount_cents integer DEFAULT 0 NOT NULL,
     description text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    display_time timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     transactionable_id integer,
-    transactionable_type character varying(255),
+    transactionable_type character varying,
+    display_time timestamp without time zone,
     reverse_transactionable_id integer,
-    reverse_transactionable_type character varying(255)
+    reverse_transactionable_type character varying
 );
 
 
@@ -1976,6 +1851,27 @@ ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 --
 
 ALTER TABLE ONLY public.accounts ALTER COLUMN id SET DEFAULT nextval('public.accounts_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_attachments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments ALTER COLUMN id SET DEFAULT nextval('public.active_storage_attachments_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_blobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_blobs ALTER COLUMN id SET DEFAULT nextval('public.active_storage_blobs_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_variant_records id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_variant_records ALTER COLUMN id SET DEFAULT nextval('public.active_storage_variant_records_id_seq'::regclass);
 
 
 --
@@ -2295,6 +2191,30 @@ ALTER TABLE ONLY public.accounts
 
 
 --
+-- Name: active_storage_attachments active_storage_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments
+    ADD CONSTRAINT active_storage_attachments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: active_storage_blobs active_storage_blobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_blobs
+    ADD CONSTRAINT active_storage_blobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: active_storage_variant_records active_storage_variant_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_variant_records
+    ADD CONSTRAINT active_storage_variant_records_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: activities activities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2316,6 +2236,14 @@ ALTER TABLE ONLY public.addresses
 
 ALTER TABLE ONLY public.admins
     ADD CONSTRAINT admins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ar_internal_metadata
+    ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
 
 
 --
@@ -2615,6 +2543,14 @@ ALTER TABLE ONLY public.schedule_transactions
 
 
 --
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
 -- Name: substitutions substitutions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2658,6 +2594,34 @@ CREATE INDEX delayed_jobs_priority ON public.delayed_jobs USING btree (priority,
 --
 
 CREATE INDEX index_accounts_on_customer_id ON public.accounts USING btree (customer_id);
+
+
+--
+-- Name: index_active_storage_attachments_on_blob_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_active_storage_attachments_on_blob_id ON public.active_storage_attachments USING btree (blob_id);
+
+
+--
+-- Name: index_active_storage_attachments_uniqueness; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_attachments_uniqueness ON public.active_storage_attachments USING btree (record_type, record_id, name, blob_id);
+
+
+--
+-- Name: index_active_storage_blobs_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_blobs_on_key ON public.active_storage_blobs USING btree (key);
+
+
+--
+-- Name: index_active_storage_variant_records_uniqueness; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON public.active_storage_variant_records USING btree (blob_id, variation_digest);
 
 
 --
@@ -2801,6 +2765,13 @@ CREATE INDEX index_deliveries_on_delivery_service_id ON public.deliveries USING 
 
 
 --
+-- Name: index_deliveries_on_order_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_deliveries_on_order_id ON public.deliveries USING btree (order_id);
+
+
+--
 -- Name: index_deliveries_on_package_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2829,45 +2800,24 @@ CREATE INDEX index_delivery_services_on_distributor_id ON public.delivery_servic
 
 
 --
+-- Name: index_distributor_invoices_on_distributor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_distributor_invoices_on_distributor_id ON public.distributor_invoices USING btree (distributor_id);
+
+
+--
+-- Name: index_distributor_pricings_on_distributor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_distributor_pricings_on_distributor_id ON public.distributor_pricings USING btree (distributor_id);
+
+
+--
 -- Name: index_distributors_on_api_key; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX index_distributors_on_api_key ON public.distributors USING btree (api_key);
-
-
---
--- Name: index_distributors_on_authentication_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_distributors_on_authentication_token ON public.distributors USING btree (authentication_token);
-
-
---
--- Name: index_distributors_on_confirmation_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_distributors_on_confirmation_token ON public.distributors USING btree (confirmation_token);
-
-
---
--- Name: index_distributors_on_email; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_distributors_on_email ON public.distributors USING btree (email);
-
-
---
--- Name: index_distributors_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_distributors_on_reset_password_token ON public.distributors USING btree (reset_password_token);
-
-
---
--- Name: index_distributors_on_unlock_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_distributors_on_unlock_token ON public.distributors USING btree (unlock_token);
 
 
 --
@@ -2931,6 +2881,13 @@ CREATE INDEX index_import_transactions_on_import_transaction_list_id ON public.i
 --
 
 CREATE INDEX index_line_items_on_distributor_id ON public.line_items USING btree (distributor_id);
+
+
+--
+-- Name: index_localised_addresses_on_addressable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_localised_addresses_on_addressable ON public.localised_addresses USING btree (addressable_type, addressable_id);
 
 
 --
@@ -3018,10 +2975,24 @@ CREATE INDEX index_substitutions_on_order_id ON public.substitutions USING btree
 
 
 --
+-- Name: index_taggings_on_taggable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_taggings_on_taggable ON public.taggings USING btree (taggable_type, taggable_id);
+
+
+--
 -- Name: index_taggings_on_taggable_id_and_taggable_type_and_context; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_taggings_on_taggable_id_and_taggable_type_and_context ON public.taggings USING btree (taggable_id, taggable_type, context);
+
+
+--
+-- Name: index_taggings_on_tagger; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_taggings_on_tagger ON public.taggings USING btree (tagger_type, tagger_id);
 
 
 --
@@ -3046,10 +3017,19 @@ CREATE UNIQUE INDEX taggings_idx ON public.taggings USING btree (tag_id, taggabl
 
 
 --
--- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -
+-- Name: active_storage_variant_records fk_rails_993965df05; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX unique_schema_migrations ON public.schema_migrations USING btree (version);
+ALTER TABLE ONLY public.active_storage_variant_records
+    ADD CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments
+    ADD CONSTRAINT fk_rails_c3b3935057 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
 
 
 --
@@ -3058,528 +3038,273 @@ CREATE UNIQUE INDEX unique_schema_migrations ON public.schema_migrations USING b
 
 SET search_path TO "$user", public;
 
-INSERT INTO schema_migrations (version) VALUES ('20111129095356');
+INSERT INTO "schema_migrations" (version) VALUES
+('20111129095356'),
+('20111130231744'),
+('20111201005231'),
+('20111201065712'),
+('20111201080900'),
+('20111201095437'),
+('20111202014435'),
+('20111202030831'),
+('20111202203846'),
+('20111202223623'),
+('20111203023947'),
+('20111203043450'),
+('20111203044422'),
+('20111203124951'),
+('20111205001329'),
+('20111205004252'),
+('20111205005039'),
+('20111205082509'),
+('20111205230751'),
+('20111213104609'),
+('20111216002214'),
+('20111216003519'),
+('20111216041303'),
+('20111216044030'),
+('20111216112600'),
+('20111218221013'),
+('20111219234909'),
+('20111220042841'),
+('20111220115128'),
+('20111228012130'),
+('20120104235552'),
+('20120108085002'),
+('20120110034608'),
+('20120110035632'),
+('20120110113524'),
+('20120114105104'),
+('20120114115648'),
+('20120115034534'),
+('20120119010559'),
+('20120119011621'),
+('20120119034927'),
+('20120119234154'),
+('20120119234748'),
+('20120120001658'),
+('20120120020534'),
+('20120123215057'),
+('20120124085202'),
+('20120124100740'),
+('20120124215818'),
+('20120124224311'),
+('20120124224707'),
+('20120125020712'),
+('20120126102057'),
+('20120129003124'),
+('20120129041416'),
+('20120129220207'),
+('20120130030201'),
+('20120131081149'),
+('20120201002517'),
+('20120201233808'),
+('20120202022849'),
+('20120207040356'),
+('20120215011432'),
+('20120215013339'),
+('20120215013725'),
+('20120216100258'),
+('20120223062300'),
+('20120223234648'),
+('20120226211014'),
+('20120227092736'),
+('20120228003940'),
+('20120228033613'),
+('20120228081323'),
+('20120228210358'),
+('20120229005336'),
+('20120229043436'),
+('20120302024839'),
+('20120306032019'),
+('20120307040041'),
+('20120307232215'),
+('20120320030645'),
+('20120329013333'),
+('20120329014157'),
+('20120329014224'),
+('20120329014401'),
+('20120329014533'),
+('20120410023926'),
+('20120417225545'),
+('20120426220552'),
+('20120430023506'),
+('20120430024101'),
+('20120501015452'),
+('20120501031349'),
+('20120501032413'),
+('20120516044556'),
+('20120517001659'),
+('20120517011651'),
+('20120521041038'),
+('20120522033509'),
+('20120530080733'),
+('20120605050350'),
+('20120607032427'),
+('20120607041557'),
+('20120611011844'),
+('20120611015841'),
+('20120613015239'),
+('20120613082157'),
+('20120614000606'),
+('20120617101936'),
+('20120627235129'),
+('20120627235203'),
+('20120629013033'),
+('20120718235146'),
+('20120724025411'),
+('20120726014507'),
+('20120730233824'),
+('20120812232427'),
+('20120815061732'),
+('20120815081106'),
+('20120815093134'),
+('20120820040446'),
+('20120822031706'),
+('20120829004318'),
+('20120830003818'),
+('20120831022656'),
+('20120904051101'),
+('20120904052651'),
+('20120909041708'),
+('20120910034809'),
+('20120911033835'),
+('20120917054659'),
+('20120918113919'),
+('20120919000442'),
+('20120920231722'),
+('20120923230255'),
+('20120927040432'),
+('20120927042204'),
+('20120927055104'),
+('20120927224520'),
+('20120929040236'),
+('20121002212248'),
+('20121003205726'),
+('20121010231051'),
+('20121010232812'),
+('20121010236717'),
+('20121018021812'),
+('20121024025935'),
+('20121102225050'),
+('20121112232854'),
+('20121114225113'),
+('20121116015952'),
+('20121119000156'),
+('20121119005042'),
+('20121128005022'),
+('20121204015243'),
+('20121211024951'),
+('20121211222422'),
+('20121212212609'),
+('20130110013104'),
+('20130116031833'),
+('20130122003352'),
+('20130123022020'),
+('20130125004824'),
+('20130128022723'),
+('20130130220514'),
+('20130213020709'),
+('20130213224528'),
+('20130218060217'),
+('20130219014308'),
+('20130220234725'),
+('20130222011927'),
+('20130226231819'),
+('20130227051525'),
+('20130228205052'),
+('20130305134300'),
+('20130306001542'),
+('20130306002347'),
+('20130306003517'),
+('20130306003632'),
+('20130307233033'),
+('20130308022028'),
+('20130311224428'),
+('20130313051530'),
+('20130315034909'),
+('20130321040949'),
+('20130409022821'),
+('20130416022347'),
+('20130417021024'),
+('20130417025820'),
+('20130423225325'),
+('20130429060902'),
+('20130430034158'),
+('20130430034231'),
+('20130508035922'),
+('20130509012650'),
+('20130510023753'),
+('20130514032841'),
+('20130514034901'),
+('20130515012606'),
+('20130610041926'),
+('20130610110940'),
+('20130610121509'),
+('20130616094641'),
+('20130617051437'),
+('20130625112501'),
+('20130703031111'),
+('20130703055630'),
+('20130705011742'),
+('20130705053401'),
+('20130710053124'),
+('20130730021915'),
+('20130820025105'),
+('20130826015549'),
+('20130826051545'),
+('20130827002646'),
+('20130910033818'),
+('20130923050455'),
+('20130926033607'),
+('20131016215622'),
+('20131016215636'),
+('20131020234439'),
+('20131022003933'),
+('20131022015514'),
+('20131022025554'),
+('20131106103858'),
+('20131112025426'),
+('20131212220220'),
+('20131216225521'),
+('20140109004934'),
+('20140109032329'),
+('20140513204743'),
+('20140518211720'),
+('20140612130409'),
+('20140713222406'),
+('20140718175650'),
+('20140922105032'),
+('20150328193017'),
+('20150414181412'),
+('20150414184421'),
+('20150422185555'),
+('20150504072003'),
+('20150508150013'),
+('20150622122103'),
+('20150630195411'),
+('20150815161649'),
+('20150815161650'),
+('20150815161651'),
+('20150815161652'),
+('20151021130722'),
+('20151120191928'),
+('20151126143915'),
+('20160102123920'),
+('20160102181716'),
+('20160318091706'),
+('20160418141933'),
+('20160419122414'),
+('20160527220835'),
+('20161012105035'),
+('20161015092717'),
+('20161018203706'),
+('20161019140533'),
+('20200626151920'),
+('20200708091011'),
+('20220118132922'),
+('20220119134058'),
+('20220119134059'),
+('20220119134060');
 
-INSERT INTO schema_migrations (version) VALUES ('20111130231744');
 
-INSERT INTO schema_migrations (version) VALUES ('20111201005231');
-
-INSERT INTO schema_migrations (version) VALUES ('20111201065712');
-
-INSERT INTO schema_migrations (version) VALUES ('20111201080900');
-
-INSERT INTO schema_migrations (version) VALUES ('20111201095437');
-
-INSERT INTO schema_migrations (version) VALUES ('20111202014435');
-
-INSERT INTO schema_migrations (version) VALUES ('20111202030831');
-
-INSERT INTO schema_migrations (version) VALUES ('20111202203846');
-
-INSERT INTO schema_migrations (version) VALUES ('20111202223623');
-
-INSERT INTO schema_migrations (version) VALUES ('20111203023947');
-
-INSERT INTO schema_migrations (version) VALUES ('20111203043450');
-
-INSERT INTO schema_migrations (version) VALUES ('20111203044422');
-
-INSERT INTO schema_migrations (version) VALUES ('20111203124951');
-
-INSERT INTO schema_migrations (version) VALUES ('20111205001329');
-
-INSERT INTO schema_migrations (version) VALUES ('20111205004252');
-
-INSERT INTO schema_migrations (version) VALUES ('20111205005039');
-
-INSERT INTO schema_migrations (version) VALUES ('20111205082509');
-
-INSERT INTO schema_migrations (version) VALUES ('20111205230751');
-
-INSERT INTO schema_migrations (version) VALUES ('20111213104609');
-
-INSERT INTO schema_migrations (version) VALUES ('20111216002214');
-
-INSERT INTO schema_migrations (version) VALUES ('20111216003519');
-
-INSERT INTO schema_migrations (version) VALUES ('20111216041303');
-
-INSERT INTO schema_migrations (version) VALUES ('20111216044030');
-
-INSERT INTO schema_migrations (version) VALUES ('20111216112600');
-
-INSERT INTO schema_migrations (version) VALUES ('20111218221013');
-
-INSERT INTO schema_migrations (version) VALUES ('20111219234909');
-
-INSERT INTO schema_migrations (version) VALUES ('20111220042841');
-
-INSERT INTO schema_migrations (version) VALUES ('20111220115128');
-
-INSERT INTO schema_migrations (version) VALUES ('20111228012130');
-
-INSERT INTO schema_migrations (version) VALUES ('20120104235552');
-
-INSERT INTO schema_migrations (version) VALUES ('20120108085002');
-
-INSERT INTO schema_migrations (version) VALUES ('20120110034608');
-
-INSERT INTO schema_migrations (version) VALUES ('20120110035632');
-
-INSERT INTO schema_migrations (version) VALUES ('20120110113524');
-
-INSERT INTO schema_migrations (version) VALUES ('20120114105104');
-
-INSERT INTO schema_migrations (version) VALUES ('20120114115648');
-
-INSERT INTO schema_migrations (version) VALUES ('20120115034534');
-
-INSERT INTO schema_migrations (version) VALUES ('20120119010559');
-
-INSERT INTO schema_migrations (version) VALUES ('20120119011621');
-
-INSERT INTO schema_migrations (version) VALUES ('20120119034927');
-
-INSERT INTO schema_migrations (version) VALUES ('20120119234154');
-
-INSERT INTO schema_migrations (version) VALUES ('20120119234748');
-
-INSERT INTO schema_migrations (version) VALUES ('20120120001658');
-
-INSERT INTO schema_migrations (version) VALUES ('20120120020534');
-
-INSERT INTO schema_migrations (version) VALUES ('20120123215057');
-
-INSERT INTO schema_migrations (version) VALUES ('20120124085202');
-
-INSERT INTO schema_migrations (version) VALUES ('20120124100740');
-
-INSERT INTO schema_migrations (version) VALUES ('20120124215818');
-
-INSERT INTO schema_migrations (version) VALUES ('20120124224311');
-
-INSERT INTO schema_migrations (version) VALUES ('20120124224707');
-
-INSERT INTO schema_migrations (version) VALUES ('20120125020712');
-
-INSERT INTO schema_migrations (version) VALUES ('20120126102057');
-
-INSERT INTO schema_migrations (version) VALUES ('20120129003124');
-
-INSERT INTO schema_migrations (version) VALUES ('20120129041416');
-
-INSERT INTO schema_migrations (version) VALUES ('20120129220207');
-
-INSERT INTO schema_migrations (version) VALUES ('20120130030201');
-
-INSERT INTO schema_migrations (version) VALUES ('20120131081149');
-
-INSERT INTO schema_migrations (version) VALUES ('20120201002517');
-
-INSERT INTO schema_migrations (version) VALUES ('20120201233808');
-
-INSERT INTO schema_migrations (version) VALUES ('20120202022849');
-
-INSERT INTO schema_migrations (version) VALUES ('20120207040356');
-
-INSERT INTO schema_migrations (version) VALUES ('20120215011432');
-
-INSERT INTO schema_migrations (version) VALUES ('20120215013339');
-
-INSERT INTO schema_migrations (version) VALUES ('20120215013725');
-
-INSERT INTO schema_migrations (version) VALUES ('20120216100258');
-
-INSERT INTO schema_migrations (version) VALUES ('20120223062300');
-
-INSERT INTO schema_migrations (version) VALUES ('20120223234648');
-
-INSERT INTO schema_migrations (version) VALUES ('20120226211014');
-
-INSERT INTO schema_migrations (version) VALUES ('20120227092736');
-
-INSERT INTO schema_migrations (version) VALUES ('20120228003940');
-
-INSERT INTO schema_migrations (version) VALUES ('20120228033613');
-
-INSERT INTO schema_migrations (version) VALUES ('20120228081323');
-
-INSERT INTO schema_migrations (version) VALUES ('20120228210358');
-
-INSERT INTO schema_migrations (version) VALUES ('20120229005336');
-
-INSERT INTO schema_migrations (version) VALUES ('20120229043436');
-
-INSERT INTO schema_migrations (version) VALUES ('20120302024839');
-
-INSERT INTO schema_migrations (version) VALUES ('20120306032019');
-
-INSERT INTO schema_migrations (version) VALUES ('20120307040041');
-
-INSERT INTO schema_migrations (version) VALUES ('20120307232215');
-
-INSERT INTO schema_migrations (version) VALUES ('20120320030645');
-
-INSERT INTO schema_migrations (version) VALUES ('20120329013333');
-
-INSERT INTO schema_migrations (version) VALUES ('20120329014157');
-
-INSERT INTO schema_migrations (version) VALUES ('20120329014224');
-
-INSERT INTO schema_migrations (version) VALUES ('20120329014401');
-
-INSERT INTO schema_migrations (version) VALUES ('20120329014533');
-
-INSERT INTO schema_migrations (version) VALUES ('20120410023926');
-
-INSERT INTO schema_migrations (version) VALUES ('20120417225545');
-
-INSERT INTO schema_migrations (version) VALUES ('20120426220552');
-
-INSERT INTO schema_migrations (version) VALUES ('20120430023506');
-
-INSERT INTO schema_migrations (version) VALUES ('20120430024101');
-
-INSERT INTO schema_migrations (version) VALUES ('20120501015452');
-
-INSERT INTO schema_migrations (version) VALUES ('20120501031349');
-
-INSERT INTO schema_migrations (version) VALUES ('20120501032413');
-
-INSERT INTO schema_migrations (version) VALUES ('20120516044556');
-
-INSERT INTO schema_migrations (version) VALUES ('20120517001659');
-
-INSERT INTO schema_migrations (version) VALUES ('20120517011651');
-
-INSERT INTO schema_migrations (version) VALUES ('20120521041038');
-
-INSERT INTO schema_migrations (version) VALUES ('20120522033509');
-
-INSERT INTO schema_migrations (version) VALUES ('20120530080733');
-
-INSERT INTO schema_migrations (version) VALUES ('20120605050350');
-
-INSERT INTO schema_migrations (version) VALUES ('20120607032427');
-
-INSERT INTO schema_migrations (version) VALUES ('20120607041557');
-
-INSERT INTO schema_migrations (version) VALUES ('20120611011844');
-
-INSERT INTO schema_migrations (version) VALUES ('20120611015841');
-
-INSERT INTO schema_migrations (version) VALUES ('20120613015239');
-
-INSERT INTO schema_migrations (version) VALUES ('20120613082157');
-
-INSERT INTO schema_migrations (version) VALUES ('20120614000606');
-
-INSERT INTO schema_migrations (version) VALUES ('20120617101936');
-
-INSERT INTO schema_migrations (version) VALUES ('20120627235129');
-
-INSERT INTO schema_migrations (version) VALUES ('20120627235203');
-
-INSERT INTO schema_migrations (version) VALUES ('20120629013033');
-
-INSERT INTO schema_migrations (version) VALUES ('20120718235146');
-
-INSERT INTO schema_migrations (version) VALUES ('20120724025411');
-
-INSERT INTO schema_migrations (version) VALUES ('20120726014507');
-
-INSERT INTO schema_migrations (version) VALUES ('20120730233824');
-
-INSERT INTO schema_migrations (version) VALUES ('20120812232427');
-
-INSERT INTO schema_migrations (version) VALUES ('20120815061732');
-
-INSERT INTO schema_migrations (version) VALUES ('20120815081106');
-
-INSERT INTO schema_migrations (version) VALUES ('20120815093134');
-
-INSERT INTO schema_migrations (version) VALUES ('20120820040446');
-
-INSERT INTO schema_migrations (version) VALUES ('20120822031706');
-
-INSERT INTO schema_migrations (version) VALUES ('20120829004318');
-
-INSERT INTO schema_migrations (version) VALUES ('20120830003818');
-
-INSERT INTO schema_migrations (version) VALUES ('20120831022656');
-
-INSERT INTO schema_migrations (version) VALUES ('20120904051101');
-
-INSERT INTO schema_migrations (version) VALUES ('20120904052651');
-
-INSERT INTO schema_migrations (version) VALUES ('20120909041708');
-
-INSERT INTO schema_migrations (version) VALUES ('20120910034809');
-
-INSERT INTO schema_migrations (version) VALUES ('20120911033835');
-
-INSERT INTO schema_migrations (version) VALUES ('20120917054659');
-
-INSERT INTO schema_migrations (version) VALUES ('20120918113919');
-
-INSERT INTO schema_migrations (version) VALUES ('20120919000442');
-
-INSERT INTO schema_migrations (version) VALUES ('20120920231722');
-
-INSERT INTO schema_migrations (version) VALUES ('20120923230255');
-
-INSERT INTO schema_migrations (version) VALUES ('20120927040432');
-
-INSERT INTO schema_migrations (version) VALUES ('20120927042204');
-
-INSERT INTO schema_migrations (version) VALUES ('20120927055104');
-
-INSERT INTO schema_migrations (version) VALUES ('20120927224520');
-
-INSERT INTO schema_migrations (version) VALUES ('20120929040236');
-
-INSERT INTO schema_migrations (version) VALUES ('20121002212248');
-
-INSERT INTO schema_migrations (version) VALUES ('20121003205726');
-
-INSERT INTO schema_migrations (version) VALUES ('20121010231051');
-
-INSERT INTO schema_migrations (version) VALUES ('20121010232812');
-
-INSERT INTO schema_migrations (version) VALUES ('20121010236717');
-
-INSERT INTO schema_migrations (version) VALUES ('20121018021812');
-
-INSERT INTO schema_migrations (version) VALUES ('20121024025935');
-
-INSERT INTO schema_migrations (version) VALUES ('20121102225050');
-
-INSERT INTO schema_migrations (version) VALUES ('20121112232854');
-
-INSERT INTO schema_migrations (version) VALUES ('20121114225113');
-
-INSERT INTO schema_migrations (version) VALUES ('20121116015952');
-
-INSERT INTO schema_migrations (version) VALUES ('20121119000156');
-
-INSERT INTO schema_migrations (version) VALUES ('20121119005042');
-
-INSERT INTO schema_migrations (version) VALUES ('20121128005022');
-
-INSERT INTO schema_migrations (version) VALUES ('20121204015243');
-
-INSERT INTO schema_migrations (version) VALUES ('20121211024951');
-
-INSERT INTO schema_migrations (version) VALUES ('20121211222422');
-
-INSERT INTO schema_migrations (version) VALUES ('20121212212609');
-
-INSERT INTO schema_migrations (version) VALUES ('20130110013104');
-
-INSERT INTO schema_migrations (version) VALUES ('20130116031833');
-
-INSERT INTO schema_migrations (version) VALUES ('20130122003352');
-
-INSERT INTO schema_migrations (version) VALUES ('20130123022020');
-
-INSERT INTO schema_migrations (version) VALUES ('20130125004824');
-
-INSERT INTO schema_migrations (version) VALUES ('20130128022723');
-
-INSERT INTO schema_migrations (version) VALUES ('20130130220514');
-
-INSERT INTO schema_migrations (version) VALUES ('20130213020709');
-
-INSERT INTO schema_migrations (version) VALUES ('20130213224528');
-
-INSERT INTO schema_migrations (version) VALUES ('20130218060217');
-
-INSERT INTO schema_migrations (version) VALUES ('20130219014308');
-
-INSERT INTO schema_migrations (version) VALUES ('20130220234725');
-
-INSERT INTO schema_migrations (version) VALUES ('20130222011927');
-
-INSERT INTO schema_migrations (version) VALUES ('20130226231819');
-
-INSERT INTO schema_migrations (version) VALUES ('20130227051525');
-
-INSERT INTO schema_migrations (version) VALUES ('20130228205052');
-
-INSERT INTO schema_migrations (version) VALUES ('20130305134300');
-
-INSERT INTO schema_migrations (version) VALUES ('20130306001542');
-
-INSERT INTO schema_migrations (version) VALUES ('20130306002347');
-
-INSERT INTO schema_migrations (version) VALUES ('20130306003517');
-
-INSERT INTO schema_migrations (version) VALUES ('20130306003632');
-
-INSERT INTO schema_migrations (version) VALUES ('20130307233033');
-
-INSERT INTO schema_migrations (version) VALUES ('20130308022028');
-
-INSERT INTO schema_migrations (version) VALUES ('20130311224428');
-
-INSERT INTO schema_migrations (version) VALUES ('20130313051530');
-
-INSERT INTO schema_migrations (version) VALUES ('20130315034909');
-
-INSERT INTO schema_migrations (version) VALUES ('20130321040949');
-
-INSERT INTO schema_migrations (version) VALUES ('20130409022821');
-
-INSERT INTO schema_migrations (version) VALUES ('20130416022347');
-
-INSERT INTO schema_migrations (version) VALUES ('20130417021024');
-
-INSERT INTO schema_migrations (version) VALUES ('20130417025820');
-
-INSERT INTO schema_migrations (version) VALUES ('20130423225325');
-
-INSERT INTO schema_migrations (version) VALUES ('20130429060902');
-
-INSERT INTO schema_migrations (version) VALUES ('20130430034158');
-
-INSERT INTO schema_migrations (version) VALUES ('20130430034231');
-
-INSERT INTO schema_migrations (version) VALUES ('20130508035922');
-
-INSERT INTO schema_migrations (version) VALUES ('20130509012650');
-
-INSERT INTO schema_migrations (version) VALUES ('20130510023753');
-
-INSERT INTO schema_migrations (version) VALUES ('20130514032841');
-
-INSERT INTO schema_migrations (version) VALUES ('20130514034901');
-
-INSERT INTO schema_migrations (version) VALUES ('20130515012606');
-
-INSERT INTO schema_migrations (version) VALUES ('20130610041926');
-
-INSERT INTO schema_migrations (version) VALUES ('20130610110940');
-
-INSERT INTO schema_migrations (version) VALUES ('20130610121509');
-
-INSERT INTO schema_migrations (version) VALUES ('20130616094641');
-
-INSERT INTO schema_migrations (version) VALUES ('20130617051437');
-
-INSERT INTO schema_migrations (version) VALUES ('20130625112501');
-
-INSERT INTO schema_migrations (version) VALUES ('20130703031111');
-
-INSERT INTO schema_migrations (version) VALUES ('20130703055630');
-
-INSERT INTO schema_migrations (version) VALUES ('20130705011742');
-
-INSERT INTO schema_migrations (version) VALUES ('20130705053401');
-
-INSERT INTO schema_migrations (version) VALUES ('20130710053124');
-
-INSERT INTO schema_migrations (version) VALUES ('20130730021915');
-
-INSERT INTO schema_migrations (version) VALUES ('20130820025105');
-
-INSERT INTO schema_migrations (version) VALUES ('20130826015549');
-
-INSERT INTO schema_migrations (version) VALUES ('20130826051545');
-
-INSERT INTO schema_migrations (version) VALUES ('20130827002646');
-
-INSERT INTO schema_migrations (version) VALUES ('20130910033818');
-
-INSERT INTO schema_migrations (version) VALUES ('20130923050455');
-
-INSERT INTO schema_migrations (version) VALUES ('20130926033607');
-
-INSERT INTO schema_migrations (version) VALUES ('20131016215622');
-
-INSERT INTO schema_migrations (version) VALUES ('20131016215636');
-
-INSERT INTO schema_migrations (version) VALUES ('20131020234439');
-
-INSERT INTO schema_migrations (version) VALUES ('20131022003933');
-
-INSERT INTO schema_migrations (version) VALUES ('20131022015514');
-
-INSERT INTO schema_migrations (version) VALUES ('20131022025554');
-
-INSERT INTO schema_migrations (version) VALUES ('20131106103858');
-
-INSERT INTO schema_migrations (version) VALUES ('20131112025426');
-
-INSERT INTO schema_migrations (version) VALUES ('20131212220220');
-
-INSERT INTO schema_migrations (version) VALUES ('20131216225521');
-
-INSERT INTO schema_migrations (version) VALUES ('20140109004934');
-
-INSERT INTO schema_migrations (version) VALUES ('20140109032329');
-
-INSERT INTO schema_migrations (version) VALUES ('20140513204743');
-
-INSERT INTO schema_migrations (version) VALUES ('20140518211720');
-
-INSERT INTO schema_migrations (version) VALUES ('20140612130409');
-
-INSERT INTO schema_migrations (version) VALUES ('20140713222406');
-
-INSERT INTO schema_migrations (version) VALUES ('20140718175650');
-
-INSERT INTO schema_migrations (version) VALUES ('20140922105032');
-
-INSERT INTO schema_migrations (version) VALUES ('20150328193017');
-
-INSERT INTO schema_migrations (version) VALUES ('20150414181412');
-
-INSERT INTO schema_migrations (version) VALUES ('20150414184421');
-
-INSERT INTO schema_migrations (version) VALUES ('20150422185555');
-
-INSERT INTO schema_migrations (version) VALUES ('20150504072003');
-
-INSERT INTO schema_migrations (version) VALUES ('20150508150013');
-
-INSERT INTO schema_migrations (version) VALUES ('20150622122103');
-
-INSERT INTO schema_migrations (version) VALUES ('20150630195411');
-
-INSERT INTO schema_migrations (version) VALUES ('20150815161649');
-
-INSERT INTO schema_migrations (version) VALUES ('20150815161650');
-
-INSERT INTO schema_migrations (version) VALUES ('20150815161651');
-
-INSERT INTO schema_migrations (version) VALUES ('20150815161652');
-
-INSERT INTO schema_migrations (version) VALUES ('20151021130722');
-
-INSERT INTO schema_migrations (version) VALUES ('20151120191928');
-
-INSERT INTO schema_migrations (version) VALUES ('20151126143915');
-
-INSERT INTO schema_migrations (version) VALUES ('20160102123920');
-
-INSERT INTO schema_migrations (version) VALUES ('20160102181716');
-
-INSERT INTO schema_migrations (version) VALUES ('20160318091706');
-
-INSERT INTO schema_migrations (version) VALUES ('20160418141933');
-
-INSERT INTO schema_migrations (version) VALUES ('20160419122414');
-
-INSERT INTO schema_migrations (version) VALUES ('20160527220835');
-
-INSERT INTO schema_migrations (version) VALUES ('20161012105035');
-
-INSERT INTO schema_migrations (version) VALUES ('20161015092717');
-
-INSERT INTO schema_migrations (version) VALUES ('20161018203706');
-
-INSERT INTO schema_migrations (version) VALUES ('20161019140533');
-
-INSERT INTO schema_migrations (version) VALUES ('20200626151920');
-
-INSERT INTO schema_migrations (version) VALUES ('20200708091011');

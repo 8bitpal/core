@@ -5,7 +5,7 @@
 DROP TABLE public.countries;
 
 --
--- Name: countries; Type: TABLE; Schema: public; Owner: buckybox
+-- Name: countries; Type: TABLE; Schema: public;
 --
 
 CREATE TABLE public.countries (
@@ -17,10 +17,10 @@ CREATE TABLE public.countries (
 );
 
 
-ALTER TABLE public.countries OWNER TO buckybox;
+ALTER TABLE public.countries OWNER TO postgres;
 
 --
--- Name: countries_id_seq; Type: SEQUENCE; Schema: public; Owner: buckybox
+-- Name: countries_id_seq; Type: SEQUENCE; Schema: public;
 --
 
 CREATE SEQUENCE public.countries_id_seq
@@ -31,24 +31,24 @@ CREATE SEQUENCE public.countries_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.countries_id_seq OWNER TO buckybox;
+ALTER TABLE public.countries_id_seq OWNER TO postgres;
 
 --
--- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: buckybox
+-- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public
 --
 
 ALTER SEQUENCE public.countries_id_seq OWNED BY public.countries.id;
 
 
 --
--- Name: countries id; Type: DEFAULT; Schema: public; Owner: buckybox
+-- Name: countries id; Type: DEFAULT; Schema: public
 --
 
 ALTER TABLE ONLY public.countries ALTER COLUMN id SET DEFAULT nextval('public.countries_id_seq'::regclass);
 
 
 --
--- Data for Name: countries; Type: TABLE DATA; Schema: public; Owner: buckybox
+-- Data for Name: countries; Type: TABLE DATA; Schema: public
 --
 
 INSERT INTO public.countries VALUES (8, 25, '2012-09-13 08:18:28.510957', '2013-07-29 06:51:14.309088', 'AR');
@@ -279,14 +279,14 @@ INSERT INTO public.countries VALUES (227, 0, '2013-07-29 06:51:18.005593', '2013
 
 
 --
--- Name: countries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: buckybox
+-- Name: countries_id_seq; Type: SEQUENCE SET; Schema: public
 --
 
 SELECT pg_catalog.setval('public.countries_id_seq', 227, true);
 
 
 --
--- Name: countries countries_pkey; Type: CONSTRAINT; Schema: public; Owner: buckybox
+-- Name: countries countries_pkey; Type: CONSTRAINT; Schema: public
 --
 
 ALTER TABLE ONLY public.countries
@@ -294,7 +294,7 @@ ALTER TABLE ONLY public.countries
 
 
 --
--- Name: index_countries_on_alpha2; Type: INDEX; Schema: public; Owner: buckybox
+-- Name: index_countries_on_alpha2; Type: INDEX; Schema: public
 --
 
 CREATE INDEX index_countries_on_alpha2 ON public.countries USING btree (alpha2);

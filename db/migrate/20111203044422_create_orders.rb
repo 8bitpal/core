@@ -12,8 +12,5 @@ class CreateOrders < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :orders, :distributor_id
-    add_index :orders, :box_id
-    add_index :orders, :customer_id
   end
 end

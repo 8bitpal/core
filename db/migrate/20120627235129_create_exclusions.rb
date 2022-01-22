@@ -6,7 +6,5 @@ class CreateExclusions < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :exclusions, :order_id
-    add_index :exclusions, :line_item_id
   end
 end

@@ -6,6 +6,5 @@ class CreateDeliveryLists < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :delivery_lists, :distributor_id
   end
 end

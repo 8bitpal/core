@@ -8,7 +8,5 @@ class CreateAccounts < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-    add_index :accounts, :distributor_id
-    add_index :accounts, :customer_id
   end
 end
