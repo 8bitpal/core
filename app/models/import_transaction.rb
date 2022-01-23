@@ -6,8 +6,6 @@ class ImportTransaction < ActiveRecord::Base
 
   monetize :amount_cents
 
-  attr_accessor :customer, :customer_id, :transaction_date, :amount_cents, :removed, :description, :confidence, :import_transaction_list, :match, :draft, :raw_data
-
   serialize :raw_data
 
   MATCH_MATCHED = "matched".freeze

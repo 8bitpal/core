@@ -3,8 +3,6 @@ class PackingList < ActiveRecord::Base
 
   has_many :packages, dependent: :destroy, order: :position
 
-  attr_accessor :distributor, :distributor_id, :date
-
   validates_presence_of :distributor_id, :date
   validates_uniqueness_of :date, scope: :distributor_id
 

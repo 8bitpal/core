@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/8bitpal/crazy_money.git
-  revision: 1c488d16669b245b540035425a746c3b8e5003bf
+  revision: c8def4b803562cce62d4e5504cd12cb35022ca6e
   specs:
     crazy_money (1.4.0)
       currency_data (>= 1.1.0)

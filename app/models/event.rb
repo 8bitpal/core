@@ -1,6 +1,5 @@
 class Event < ActiveRecord::Base
   belongs_to :distributor
-  attr_accessor :distributor, :event_type, :dismissed, :trigger_on, :message, :key
   validates_presence_of :distributor, :event_type, :message, :key
 
   before_save :set_trigger_on
@@ -55,7 +54,7 @@ class Event < ActiveRecord::Base
   end
 
   def self.all_for_distributor(distributor)
-    distributor.events.active.current.scoped
+    distributor.events.active.current
   end
 
   def set_key(resource)

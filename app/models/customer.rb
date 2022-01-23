@@ -24,10 +24,6 @@ class Customer < ActiveRecord::Base
 
   monetize :balance_threshold_cents
 
-  attr_accessor :address_attributes, :first_name, :last_name, :email, :name, :distributor_id, :distributor,
-    :delivery_service, :delivery_service_id, :password, :password_confirmation, :remember_me, :tag_list, :discount, :number, :notes,
-    :special_order_preference, :balance_threshold, :via_webstore, :address
-
   validates_presence_of :distributor_id, :delivery_service_id, :first_name, :email, :discount
   validates_uniqueness_of :number, scope: :distributor_id
   validates_numericality_of :number, greater_than: 0

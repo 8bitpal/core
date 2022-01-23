@@ -62,4 +62,11 @@ private
   def new_delivery_service
     DeliveryService.new(distributor: current_distributor).decorate
   end
+
+  def delivery_service_params
+    params.require(:delivery_service).permit(
+      :name, :fee, :instructions, :pickup_point, :delete,
+      :schedule_rule_attributes => [:mon, :tue, :wed, :thu, :fri, :sat, :sun]
+    )
+  end
 end

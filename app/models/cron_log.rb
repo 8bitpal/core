@@ -1,6 +1,4 @@
 class CronLog < ActiveRecord::Base
-  attr_accessor :log, :details
-
   default_scope { order('created_at DESC') }
 
   def self.log(text, details = "")

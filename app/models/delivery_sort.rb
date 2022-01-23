@@ -1,6 +1,4 @@
 class DeliverySort
-  attr_accessor :items, :type
-
   def self.grouped_by_boxes(items)
     delivery_sort = new(items)
     delivery_sort.grouped_by_boxes

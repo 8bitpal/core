@@ -11,9 +11,6 @@ class Payment < ActiveRecord::Base
 
   monetize :amount_cents
 
-  attr_accessor :account, :account_id, :amount, :kind, :description, :distributor, :reference, :source,
-    :display_time, :payable, :payable_id, :payable_type
-
   KINDS = %w(bank_transfer credit_card cash delivery unspecified).freeze
   SOURCES = %w(manual import).freeze
 

@@ -1,5 +1,4 @@
 class LocalisedAddress < ActiveRecord::Base
-  attr_accessor :street, :city, :zip, :state, :lat, :lng
   belongs_to :addressable, polymorphic: true
   validates_presence_of :street, :city
 

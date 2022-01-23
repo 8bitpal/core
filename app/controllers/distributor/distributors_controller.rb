@@ -19,4 +19,10 @@ protected
   def begin_of_association_chain
     nil
   end
+
+private
+  def distributor_params
+    params.require(:distributor).permit(:email, :password)
+  end
+
 end

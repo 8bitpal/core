@@ -15,8 +15,6 @@ class Delivery < ActiveRecord::Base
 
   acts_as_list scope: [:delivery_list_id, :delivery_service_id]
 
-  attr_accessor :order, :order_id, :delivery_service, :status, :status_change_type, :delivery_list, :package, :package_id, :account
-
   STATUS_CHANGE_TYPE = %w(manual auto).freeze
 
   validates_presence_of :order_id, :delivery_list_id, :delivery_service_id, :package_id, :status, :status_change_type

@@ -19,6 +19,12 @@ class ApplicationController < ActionController::Base
     render text: "Pong!"
   end
 
+  before_action do
+    resource = controller_name.singularize.to_sym
+    method = "#{resource}_params"
+    params[resource] &&= send(method) if respond_to?(method, true)
+  end
+
 protected
 
   before_action def set_locale

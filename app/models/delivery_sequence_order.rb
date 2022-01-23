@@ -1,6 +1,4 @@
 class DeliverySequenceOrder < ActiveRecord::Base
-  attr_accessor :address_hash, :day, :position, :delivery_service_id
-
   belongs_to :delivery_service
 
   after_save :update_dso # cache results on delivery model

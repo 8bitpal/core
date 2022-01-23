@@ -10,9 +10,6 @@ class Address < ActiveRecord::Base
 
   belongs_to :customer, inverse_of: :address
 
-  attr_accessor :customer, :address_1, :address_2, :suburb, :city, :postcode, :delivery_note
-  attr_accessor(*PhoneCollection.attributes)
-  attr_accessor :phone
   attr_writer :distributor
 
   before_validation :update_phone

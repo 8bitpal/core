@@ -1,7 +1,5 @@
 # Keeps track of customer logins
 class CustomerLogin < ActiveRecord::Base
-  attr_accessor :customer, :distributor_id
-
   belongs_to :distributor
   belongs_to :customer
 

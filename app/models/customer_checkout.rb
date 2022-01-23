@@ -1,6 +1,4 @@
 class CustomerCheckout < ActiveRecord::Base
-  attr_accessor :customer, :distributor_id
-
   belongs_to :distributor
   belongs_to :customer
 

@@ -5,8 +5,6 @@ class Transaction < ActiveRecord::Base
 
   monetize :amount_cents
 
-  attr_accessor :account, :transactionable, :amount, :description, :display_time, :reverse_transactionable
-
   validates_presence_of :account_id, :transactionable_id, :transactionable_type, :amount, :description, :display_time
 
   scope :ordered_by_display_time, -> { order('transactions.display_time DESC, transactions.created_at DESC') }

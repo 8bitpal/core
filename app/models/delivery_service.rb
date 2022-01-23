@@ -10,7 +10,6 @@ class DeliveryService < ActiveRecord::Base
 
   monetize :fee_cents
 
-  attr_accessor :distributor, :name, :fee, :instructions, :schedule_rule_attributes, :schedule_rule, :pickup_point
   accepts_nested_attributes_for :schedule_rule
 
   validates_presence_of :distributor_id, :name, :fee, :instructions, :schedule_rule

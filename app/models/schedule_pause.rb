@@ -1,6 +1,4 @@
 class SchedulePause < ActiveRecord::Base
-  attr_accessor :finish, :schedule_rule_id, :start
-
   has_one :schedule_rule, dependent: :destroy
 
   def self.from_ice_cube(schedule)

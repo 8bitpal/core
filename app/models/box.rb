@@ -20,10 +20,6 @@ class Box < ActiveRecord::Base
 
   mount_uploader :box_image, BoxImageUploader
 
-  # Setup accessible (or protected) attributes for your model
-  attr_accessor :distributor, :name, :description, :likes, :dislikes, :price, :available_single, :available_weekly,
-    :available_fourtnightly, :box_image, :box_image_cache, :remove_box_image, :extras_limit, :extra_ids, :hidden, :visible, :exclusions_limit, :substitutions_limit, :extras
-
   validates_presence_of :distributor, :name, :description, :price
   validates :extras_limit, numericality: { greater_than: -2 }
   validates :name, length: { maximum: 80 }

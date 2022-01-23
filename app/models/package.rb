@@ -19,8 +19,6 @@ class Package < ActiveRecord::Base
 
   acts_as_list scope: :packing_list_id
 
-  attr_accessor :order, :order_id, :packing_list, :status, :position
-
   STATUS = %w(unpacked packed).freeze # TODO: change to state_machine next time this is touched
   PACKING_METHOD = %w(manual auto).freeze
 

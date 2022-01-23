@@ -4,8 +4,6 @@ class Exclusion < ActiveRecord::Base
 
   has_one :customer, through: :order
 
-  attr_accessor :order, :line_item, :order_id, :line_item_id
-
   validates_uniqueness_of :line_item_id, scope: :order_id
 
   scope :active, -> { joins(:order).where("orders.active = ?", true) }

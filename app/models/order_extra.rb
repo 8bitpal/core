@@ -1,6 +1,4 @@
 class OrderExtra < ActiveRecord::Base
-  attr_accessor :extra_id
-
   belongs_to :order
   belongs_to :extra
 
